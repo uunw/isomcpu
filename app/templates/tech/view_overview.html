@@ -1,61 +1,123 @@
-<div class="content-wrapper">
-    <section class="job-list-panel" style="width: 100%; height: 100%;">
-        <div class="panel-title-wrapper">
-            <h2 class="panel-title">ภาพรวมระบบ</h2>
-            <div class="panel-title-divider"></div>
+<div class="content-wrapper" style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; height: 100vh; overflow: hidden; padding: 20px;">
+    <!-- Left: Stats Section -->
+    <section class="job-list-panel" style="width: 100%; height: 100%; padding: 2.5rem; border-radius: 40px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 2rem;">
+            <div style="background: #f8f9fa; padding: 10px; border-radius: 15px; font-size: 1.5rem;">📊</div>
+            <h2 style="font-size: 2.2rem; font-weight: 800; color: #001f3f; margin: 0;">ภาพรวมวันนี้</h2>
         </div>
 
-        <!-- Stats Grid -->
-        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
-            <div class="stat-box" style="background: linear-gradient(135deg, #001f3f 0%, #003d7a 100%); color: white; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 12px rgba(0,31,63,0.2);">
-                <div style="font-size: 2.2rem;">📈</div>
-                <div>
-                    <div style="font-size: 1.8rem; font-weight: bold;" x-text="stats.total">0</div>
-                    <div style="font-size: 0.8rem; opacity: 0.8;">งานซ่อมทั้งหมด</div>
+        <!-- Shop Stats (Global) -->
+        <div class="stats-row" style="margin-bottom: 2.5rem;">
+            <div style="display: flex; gap: 15px;">
+                <!-- Total Card (Dark Blue) -->
+                <div style="flex: 1.2; background: #001f3f; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; box-shadow: 0 10px 20px rgba(0,31,63,0.2);">
+                    <div style="font-weight: bold; font-size: 1rem;">งานทั้งหมด</div>
+                    <div style="font-size: 4.5rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.global.total">0</div>
+                    <div></div>
                 </div>
-            </div>
-            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
-                <div style="font-size: 2.2rem;">⏳</div>
-                <div>
-                    <div style="font-size: 1.8rem; font-weight: bold; color: #ff9800;" x-text="stats.pending">0</div>
-                    <div style="font-size: 0.8rem; color: #666;">รอดำเนินการ</div>
+                <!-- Todo Card (Navy) -->
+                <div style="flex: 1; background: #2c3e50; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; opacity: 0.9;">งานที่ต้องทำ</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.todo">0</div>
+                    <div></div>
                 </div>
-            </div>
-            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
-                <div style="font-size: 2.2rem;">🛠️</div>
-                <div>
-                    <div style="font-size: 1.8rem; font-weight: bold; color: #2196f3;" x-text="stats.repairing">0</div>
-                    <div style="font-size: 0.8rem; color: #666;">กำลังซ่อม</div>
+                <!-- Waiting Card (Light Gray) -->
+                <div style="flex: 1; background: #e9ecef; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #666;">รอการดำเนินการ</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.waiting">0</div>
+                    <div></div>
                 </div>
-            </div>
-            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
-                <div style="font-size: 2.2rem;">✅</div>
-                <div>
-                    <div style="font-size: 1.8rem; font-weight: bold; color: #4caf50;" x-text="stats.complete">0</div>
-                    <div style="font-size: 0.8rem; color: #666;">ซ่อมเสร็จแล้ว</div>
+                <!-- Done Card (Silver) -->
+                <div style="flex: 1; background: #dee2e6; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #666;">งานที่เสร็จแล้ว</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.done">0</div>
+                    <div></div>
                 </div>
             </div>
         </div>
 
-        <!-- Additional Content -->
-        <div style="margin-top: 2.5rem; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; flex: 1;">
-            <div style="background: #f8f9fa; border-radius: 20px; padding: 1.5rem; border: 1.5px solid #eef0f5;">
-                <h3 style="color: #001f3f; margin-bottom: 1rem;">แนวโน้มงานซ่อม (7 วันล่าสุด)</h3>
-                <div style="height: 250px; display: flex; align-items: center; justify-content: center; color: #aaa;">
-                    <p>ระบบกราฟกำลังอยู่ระหว่างการพัฒนา</p>
+        <!-- My Stats (Personal) -->
+        <div class="stats-row">
+            <div style="display: flex; gap: 15px;">
+                <!-- My Total (Primary Blue) -->
+                <div style="flex: 1.2; background: #1a4da3; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; box-shadow: 0 10px 20px rgba(26,77,163,0.2);">
+                    <div style="font-weight: bold; font-size: 1rem;">งานของฉัน</div>
+                    <div style="font-size: 4.5rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.personal.total">0</div>
+                    <div></div>
                 </div>
-            </div>
-            <div style="background: #f8f9fa; border-radius: 20px; padding: 1.5rem; border: 1.5px solid #eef0f5;">
-                <h3 style="color: #001f3f; margin-bottom: 1rem;">ช่างประจำวัน</h3>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                    <template x-for="i in 3" :key="i">
-                        <div style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px 15px; border-radius: 12px; border: 1px solid #eee;">
-                            <span style="font-weight: 600; color: #333;">ช่างไข่ แปดริ้ว</span>
-                            <span class="status-badge WAITING_CHECK" style="font-size: 0.7rem;">5 งาน</span>
-                        </div>
-                    </template>
+                <!-- My Todo (Steel Blue) -->
+                <div style="flex: 1; background: #4a6fa5; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; opacity: 0.9;">งานที่ต้องทำ</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.todo">0</div>
+                    <div></div>
+                </div>
+                <!-- My Waiting (Light Gray) -->
+                <div style="flex: 1; background: #e9ecef; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #666;">รอการดำเนินการ</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.waiting">0</div>
+                    <div></div>
+                </div>
+                <!-- My Done (Beige) -->
+                <div style="flex: 1; background: #e3e3e3; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: #666;">งานที่เสร็จแล้ว</div>
+                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.done">0</div>
+                    <div></div>
                 </div>
             </div>
         </div>
+
+        <div style="width: 100%; height: 2px; background: #eee; margin-top: 3rem;"></div>
     </section>
+
+    <!-- Right: Notification Section -->
+    <aside style="background: white; border-radius: 40px; padding: 2rem; display: flex; flex-direction: column; height: 100%; border: 1.5px solid #eef0f5;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
+            <div style="background: #fffbe6; padding: 8px; border-radius: 12px; font-size: 1.5rem;">🔔</div>
+            <h2 style="font-size: 1.8rem; font-weight: 800; color: #001f3f; margin: 0;">การแจ้งเตือน</h2>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+            <button style="background: #f8f9fa; border: 1px solid #ddd; padding: 4px 12px; border-radius: 15px; font-size: 0.75rem; color: #666; font-weight: bold;">อ่านแล้วทั้งหมด</button>
+        </div>
+
+        <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 5px;" class="activity-list">
+            <template x-for="act in dashboardSummary.activities" :key="act.timestamp">
+                <div style="display: flex; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 15px; transition: 0.2s;" class="activity-item">
+                    <div style="background: #001f3f; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 0.9rem;">
+                        <i :class="act.status === 'PENDING_REPAIR' ? 'fa-solid fa-file-invoice' : 'fa-solid fa-clock-rotate-left'"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #999; margin-bottom: 2px;">
+                            <span x-text="new Date(act.timestamp).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })"></span>
+                            - <span x-text="act.queueId" style="font-weight: bold; color: #001f3f;"></span> (<span x-text="act.customerName"></span>)
+                        </div>
+                        <div style="font-size: 0.85rem; color: #333; line-height: 1.4;">
+                            อัปเดตสถานะ: <span x-text="statusDisplay[act.status]" style="font-weight: bold;"></span>
+                            <div x-text="act.problem" style="color: #666; font-size: 0.8rem; margin-top: 2px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            
+            <template x-if="dashboardSummary.activities.length === 0">
+                <div style="text-align: center; color: #ccc; margin-top: 3rem;">
+                    <i class="fa-solid fa-bell-slash" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.3;"></i>
+                    <p>ไม่มีการแจ้งเตือนใหม่</p>
+                </div>
+            </template>
+        </div>
+    </aside>
 </div>
+
+<style>
+.activity-item:hover {
+    background: #f8f9fa;
+}
+.activity-list::-webkit-scrollbar {
+    width: 4px;
+}
+.activity-list::-webkit-scrollbar-thumb {
+    background: #eee;
+    border-radius: 10px;
+}
+</style>

@@ -12,8 +12,8 @@ This document provides a comprehensive index and architectural overview of the I
 - **Database:** PostgreSQL (Hosted on Neon)
 - **Integration:** [LINE Messaging API](https://developers.line.biz/en/docs/messaging-api/)
 - **Frontend Integration:** 
-  - **LIFF (Mobile):** Rendered via `liff.html` using Alpine.js.
-  - **Technician Dashboard:** Single Page Application (SPA) served via `tech.html` with Alpine.js and Jinja2 components. Integrated logic in `scripts.html`.
+  - **LIFF (Mobile):** Rendered via `liff.html` using Alpine.js. Includes high-fidelity tracking with 12-stage timeline.
+  - **Technician Dashboard:** Single Page Application (SPA) served via `tech.html` with Alpine.js and Jinja2 components. Centralized logic in `scripts.html`.
 
 ---
 
@@ -24,43 +24,42 @@ This document provides a comprehensive index and architectural overview of the I
 - `tech.py`: Template router for the Technician SPA Dashboard.
 - `tech_api.py`: Backend API for technician operations (mounted at `/api/tech`).
 - `line_webhook.py`: Processes incoming LINE Messaging API events.
+- `repairs.py`: Unified repair and quotation management for customers.
 
 ### Service Layer (`app/services/`)
-- `line_service.py`: LINE interaction logic, Flex Messages, and troubleshooting advice.
+- `line_service.py`: LINE interaction logic using external JSON templates (`line_templates.json`).
 - `repair_service.py`: Core repair lifecycle management and strict status transition logic.
+- `media_service.py`: Image (WebP 80%) and Video (MP4 H.264) compression service.
+- `quotation_service.py`: Business logic for creating and managing quotations.
 
 ### Template Layer (`app/templates/`)
 - `liff.html` & `tech.html`: Master templates.
 - `tech/`: Component-based views (`view_mywork.html`, `view_overview.html`, `view_queue_all.html`, `view_tech_manage.html`).
-- `tech/scripts.html`: Centralized Alpine.js logic for the Technician SPA.
-
-### Frontend Assets (`frontend/`)
-- `frontend/liff/`: Static assets for customers.
-- `frontend/tech/`: Static assets for technicians (mounted at `/tech-assets`).
+- `liff/`: Customer views with refined capsule-style UI.
 
 ---
 
 ## 3. Status State Machine (Strict 12-Stage Lifecycle)
 
-The system enforces a granular 12-stage repair lifecycle using English Uppercase keys:
+The system enforces a granular 12-stage repair lifecycle:
 1. `PENDING_REPAIR` -> 2. `PICKING_UP` -> 3. `RECEIVED` -> 4. `AT_SHOP` -> 5. `WAITING_CHECK` -> 6. `DIAGNOSING` -> 7. `QUOTED` -> 8. `PAID` -> 9. `REPAIRING` -> 10. `REPAIRED` -> 11. `DELIVERING` -> 12. `COMPLETED`
 
-- **Rules:** Statuses must be updated sequentially. The `PAID` status requires customer confirmation (simulated in dev).
-- **History:** Every status change is logged in `repair_status_logs` with timestamps and technician attribution.
+- **Manual Override:** Global queue view allows manual technician assignment for unassigned tasks.
+- **Cancellation:** Supports `CANCELLED` status with specialized return flow and address selection.
 
 ---
 
 ## 4. Operational Mandates
 
-- **UI Standards:** **SweetAlert2** for all user feedback. **Chevron-style** status buttons in the Tech Dashboard.
-- **Media Handling:** Images are auto-compressed to **WebP (80% quality)** using Pillow. Videos are compressed to **MP4 (H.264, CRF 28)** using FFmpeg.
-- **Dev Support:** All API calls from the frontend include `ngrok-skip-browser-warning: true`.
-- **Navigation:** Supports Query String (`?id=...`) for direct linking to repair jobs in the My Work view.
+- **UI Standards:** **SweetAlert2** for all user feedback. **Chevron-style** status buttons. **Capsule-style** data rows in LIFF.
+- **Media Handling:** Automated server-side compression for images and videos.
+- **Dev Support:** All API calls include `ngrok-skip-browser-warning: true`.
+- **Navigation:** Full SPA routing support with Browser Back/Forward compatibility and Deep Linking (`?id=...`).
 
 ---
 
 ## 5. Development Guidelines
 
 - **Run Locally:** `uv run uvicorn app.main:app --reload`
+- **Deploy:** `./deploy.sh` (Automated packaging, upload, build, and migration).
 - **Schema Fix:** `uv run python scripts/db_fix.py`
-- **Migration:** `uv run python scripts/migrate_status.py`

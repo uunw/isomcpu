@@ -10,7 +10,11 @@
             jobs: [], // My Work jobs
             allRepairs: [], // All jobs in shop
             allTechnicians: [], // All techs in system
-            stats: { total: 0, pending: 0, repairing: 0, complete: 0 },
+            dashboardSummary: {
+                global: { total: 0, todo: 0, waiting: 0, done: 0 },
+                personal: { total: 0, todo: 0, waiting: 0, done: 0 },
+                activities: []
+            },
             
             // --- Filter & UI State ---
             search: '',
@@ -25,7 +29,8 @@
             statusSequence: [
                 "PENDING_REPAIR", "PICKING_UP", "RECEIVED", "AT_SHOP",
                 "WAITING_CHECK", "DIAGNOSING", "QUOTED", "PAID",
-                "REPAIRING", "REPAIRED", "DELIVERING", "COMPLETED"
+                "REPAIRING", "REPAIRED", "DELIVERING", "COMPLETED",
+                "CANCELLED"
             ],
             statusDisplay: {
                 "PENDING_REPAIR": "คำขอส่งซ่อม",
@@ -39,7 +44,8 @@
                 "REPAIRING": "กำลังซ่อม",
                 "REPAIRED": "ซ่อมเสร็จ",
                 "DELIVERING": "กำลังส่งเครื่องกลับ",
-                "COMPLETED": "ลูกค้ารับเครื่องแล้ว"
+                "COMPLETED": "ลูกค้ารับเครื่องแล้ว",
+                "CANCELLED": "ยกเลิกการซ่อม"
             },
 
             get headers() {
@@ -51,19 +57,36 @@
             async init() {
                 if (this.token) {
                     await this.fetchProfile();
-                    await this.refreshCurrentView();
+                    await this.handleRouting(); 
                     
-                    // Auto-select from URL query string
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const qid = urlParams.get('id');
-                    if (qid && this.jobs.length > 0) {
-                        const job = this.jobs.find(j => j.queueId === qid);
-                        if (job) this.selectJob(job);
-                    } else if (this.jobs.length > 0 && this.view === 'mywork') {
-                        this.selectJob(this.jobs[0]);
-                    }
+                    window.onpopstate = async () => {
+                        await this.handleRouting();
+                    };
                 }
                 this.initialized = true;
+            },
+
+            async handleRouting() {
+                const pathParts = window.location.pathname.split('/');
+                const viewFromUrl = pathParts[pathParts.length - 1];
+                const validViews = ["mywork", "overview", "queue-all", "tech-manage"];
+                
+                if (validViews.includes(viewFromUrl)) {
+                    this.view = viewFromUrl;
+                } else {
+                    this.view = 'mywork';
+                }
+
+                await this.refreshCurrentView();
+
+                const urlParams = new URLSearchParams(window.location.search);
+                const qid = urlParams.get('id');
+                if (qid && this.jobs.length > 0) {
+                    const job = this.jobs.find(j => j.queueId === qid);
+                    if (job) this.selectJob(job);
+                } else if (this.jobs.length > 0 && this.view === 'mywork') {
+                    this.selectJob(this.jobs[0]);
+                }
             },
 
             async refreshCurrentView() {
@@ -72,7 +95,7 @@
                     await this.fetchAllRepairs();
                     await this.fetchAllTechnicians();
                 }
-                if (this.view === 'overview') await this.fetchStats();
+                if (this.view === 'overview') await this.fetchDashboardSummary();
                 if (this.view === 'tech-manage') await this.fetchAllTechnicians();
             },
 
@@ -96,26 +119,26 @@
             async fetchAllRepairs() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, { headers: this.headers });
-                    if (res.ok) this.allRepairs = await res.json();
+                    if (res.ok) {
+                        this.allRepairs = await res.json();
+                    }
                 } catch (e) { console.error(e); }
             },
 
             async fetchAllTechnicians() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/all`, { headers: this.headers });
-                    if (res.ok) this.allTechnicians = await res.json();
+                    if (res.ok) {
+                        this.allTechnicians = await res.json();
+                    }
                 } catch (e) { console.error(e); }
             },
 
-            async fetchStats() {
+            async fetchDashboardSummary() {
                 try {
-                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, { headers: this.headers });
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/dashboard/summary`, { headers: this.headers });
                     if (res.ok) {
-                        const all = await res.json();
-                        this.stats.total = all.length;
-                        this.stats.pending = all.filter(r => r.status === 'PENDING_REPAIR').length;
-                        this.stats.repairing = all.filter(r => r.status === 'REPAIRING').length;
-                        this.stats.complete = all.filter(r => r.status === 'COMPLETED').length;
+                        this.dashboardSummary = await res.json();
                     }
                 } catch (e) { console.error(e); }
             },
@@ -213,6 +236,24 @@
                 }
             },
 
+            async assignTech(queueId, techId) {
+                if (!techId) return;
+                Swal.fire({ title: 'กำลังมอบหมายงาน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/assign?queue_id=${queueId}&tech_id=${techId}`, {
+                        method: 'PUT',
+                        headers: this.headers
+                    });
+                    if (res.ok) {
+                        await Swal.fire('สำเร็จ', 'มอบหมายงานให้ช่างเรียบร้อยแล้ว', 'success');
+                        await this.fetchAllRepairs();
+                    } else {
+                        const err = await res.json();
+                        throw new Error(err.detail || 'มอบหมายไม่สำเร็จ');
+                    }
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
             async submitQuotation(data) {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/quotation/create`, {
@@ -245,33 +286,22 @@
                     showCancelButton: true,
                     confirmButtonColor: '#001f3f'
                 });
-
                 if (!confirm.isConfirmed) return;
-
                 Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/register`, {
                         method: 'POST',
-                        headers: { 
-                            ...this.headers,
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { ...this.headers, 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData)
                     });
-
                     if (res.ok) {
                         await Swal.fire('สำเร็จ!', 'ลงทะเบียนช่างคนใหม่เรียบร้อยแล้ว', 'success');
-                        await this.fetchAllTechnicians();
-                        // Reset the local form in view_tech_manage if needed (handled by view-local state usually)
-                        location.reload(); // Quickest way to sync all states
+                        location.reload();
                     } else {
                         const err = await res.json();
                         throw new Error(err.detail || 'ไม่สามารถลงทะเบียนได้');
                     }
-                } catch (e) {
-                    Swal.fire('ผิดพลาด', e.message, 'error');
-                }
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
             },
 
             logout(expired = false) {
@@ -302,6 +332,7 @@
                         this.token = data.access_token;
                         await this.init();
                         this.switchView('mywork');
+                        await Swal.fire({ title: 'เข้าสู่ระบบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
                     } else { throw new Error(data.detail || 'Login failed'); }
                 } catch (e) { Swal.fire('เข้าสู่ระบบไม่สำเร็จ', e.message, 'error'); }
             }

@@ -6,8 +6,19 @@
             <h5 x-text="'คิวงาน : ' + (repairData.queueId || '...')"></h5>
         </div>
 
-        <!-- Vertical Timeline -->
-        <div class="vertical-timeline mt-2">
+        <!-- Cancellation Banner (Show only if status is CANCELLED) -->
+        <template x-if="repairData.status === 'CANCELLED'">
+            <div class="alert alert-danger border-0 rounded-4 p-3 mb-4 d-flex align-items-center gap-3" style="background-color: #fff5f5; color: #c53030;">
+                <div style="font-size: 2.5rem;">🚫</div>
+                <div>
+                    <h5 class="fw-bold mb-1">ยกเลิกรายการซ่อมแล้ว</h5>
+                    <p class="small mb-0">เจ้าหน้าที่จะดำเนินการส่งเครื่องคืนตามที่อยู่ที่แจ้งไว้ด้านล่างครับ</p>
+                </div>
+            </div>
+        </template>
+
+        <!-- Vertical Timeline (Grayed out if CANCELLED) -->
+        <div class="vertical-timeline mt-2" :style="repairData.status === 'CANCELLED' ? 'opacity: 0.4; pointer-events: none;' : ''">
             <template x-for="(stage, index) in timelineStages" :key="index">
                 <div class="timeline-item" :class="{'active': currentStageIndex === index, 'completed': currentStageIndex > index}">
                     <div class="timeline-marker"></div>
@@ -18,6 +29,15 @@
                             <div class="status-desc">
                                 <div x-text="getStatusDescription(stage)"></div>
                                 
+                                <!-- Tech and Queue info -->
+                                <div class="mt-2" style="font-size: 14px;">
+                                    <div><span class="fw-bold">จำนวนคิว :</span> <span x-text="stats.pending + ' คิว'"></span></div>
+                                    <div class="d-flex align-items: center; gap: 5px;">
+                                        <span class="fw-bold">ช่างที่รับผิดชอบ :</span> 
+                                        <span x-text="repairData.technician?.displayName || 'เจ้าหน้าที่รอยืนยัน'"></span>
+                                    </div>
+                                </div>
+
                                 <!-- Button for QUOTED stage -->
                                 <template x-if="stage === 'QUOTED'">
                                     <button class="btn btn-primary btn-sm mt-3 w-100" @click="openQuotationModal()" style="border-radius: 20px; background: #0044cc;">
@@ -32,34 +52,47 @@
         </div>
 
         <!-- Order Info Card -->
-        <div class="order-info-card">
-            <div class="info-row">
-                <div class="icon-circle"><i class="fa-solid fa-user"></i></div>
-                <span x-text="repairData.fullName"></span>
-            </div>
-            <div class="info-row">
-                <div class="icon-circle"><i class="fa-solid fa-phone"></i></div>
-                <span x-text="repairData.phoneNumber"></span>
-            </div>
-            <div class="info-row">
-                <div class="icon-circle"><i class="fa-solid fa-location-dot"></i></div>
-                <span class="small" x-text="repairData.address"></span>
-            </div>
-            <div class="info-row">
+        <div class="order-info-card mt-4" style="border-top: 1px solid #eee; padding-top: 20px;">
+            <!-- Return Address Highlight for Cancelled -->
+            <template x-if="repairData.status === 'CANCELLED'">
+                <div class="confirm-data-row mb-3" style="background-color: #fffbe6; border: 1.5px dashed #f6ad55; height: auto; padding: 15px; border-radius: 20px;">
+                    <div class="icon-circle" style="background-color: #dd6b20;"><i class="fa-solid fa-truck-ramp-box"></i></div>
+                    <div style="color: #856404;">
+                        <div class="fw-bold" style="font-size: 16px;">ที่อยู่จัดส่งคืน :</div>
+                        <div style="font-size: 14px; line-height: 1.4;" x-text="repairData.address"></div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Standard Rows -->
+            <template x-if="repairData.status !== 'CANCELLED'">
+                <div>
+                    <div class="confirm-data-row">
+                        <div class="icon-circle"><i class="fa-solid fa-user"></i></div>
+                        <span x-text="repairData.fullName"></span>
+                    </div>
+                    <div class="confirm-data-row">
+                        <div class="icon-circle"><i class="fa-solid fa-phone"></i></div>
+                        <span x-text="repairData.phoneNumber"></span>
+                    </div>
+                    <div class="confirm-data-row" style="height: auto; padding: 10px 15px;">
+                        <div class="icon-circle"><i class="fa-solid fa-location-dot"></i></div>
+                        <span x-text="repairData.address"></span>
+                    </div>
+                </div>
+            </template>
+
+            <div class="confirm-data-row">
                 <div class="icon-circle"><i class="fa-solid fa-laptop"></i></div>
                 <span>ประเภท: <span class="fw-bold" x-text="repairData.deviceType"></span></span>
             </div>
-            <div class="info-row">
+            <div class="confirm-data-row">
                 <div class="icon-circle"><i class="fa-solid fa-circle-question"></i></div>
                 <span>ปัญหา: <span x-text="repairData.problemDetail"></span></span>
             </div>
-            <div class="info-row">
+            <div class="confirm-data-row">
                 <div class="icon-circle"><i class="fa-solid fa-calendar"></i></div>
                 <span>วันนัดรับเครื่อง: <span x-text="formatDate(repairData.pickupDate)"></span></span>
-            </div>
-            <div class="info-row">
-                <div class="icon-circle"><i class="fa-solid fa-clock"></i></div>
-                <span>ช่วงเวลา: 15:00</span>
             </div>
         </div>
     </div>

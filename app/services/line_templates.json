@@ -1,0 +1,212 @@
+{
+    "troubleshooting_menu": {
+        "type": "bubble",
+        "size": "mega",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "เลือกปัญหาที่พบได้เลยครับ 👇",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#ffffff"
+                }
+            ],
+            "backgroundColor": "#272727",
+            "paddingTop": "25px",
+            "paddingBottom": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [],
+            "backgroundColor": "#272727",
+            "paddingBottom": "30px",
+            "spacing": "sm"
+        }
+    },
+    "trouble_advice": {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "{{title}}",
+                    "weight": "bold",
+                    "size": "lg",
+                    "color": "#021d46"
+                }
+            ],
+            "paddingBottom": "10px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "{{advice}}",
+                    "wrap": true,
+                    "size": "sm",
+                    "color": "#666666"
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#0044cc",
+                    "action": {
+                        "type": "uri",
+                        "label": "แจ้งซ่อมทันที",
+                        "uri": "{{frontend_url}}/"
+                    }
+                }
+            ]
+        }
+    },
+    "status_update": {
+        "type": "bubble",
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                {
+                    "type": "text",
+                    "text": "อัปเดตสถานะการซ่อม",
+                    "weight": "bold",
+                    "size": "xl"
+                },
+                {
+                    "type": "box",
+                    "layout": "vertical",
+                    "margin": "lg",
+                    "spacing": "sm",
+                    "contents": [
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                { "type": "text", "text": "เลขคิว", "color": "#aaaaaa", "size": "sm", "flex": 1 },
+                                { "type": "text", "text": "{{queue_id}}", "wrap": true, "color": "#666666", "size": "sm", "flex": 4 }
+                            ]
+                        },
+                        {
+                            "type": "box",
+                            "layout": "baseline",
+                            "spacing": "sm",
+                            "contents": [
+                                { "type": "text", "text": "สถานะใหม่", "color": "#aaaaaa", "size": "sm", "flex": 1 },
+                                { "type": "text", "text": "{{thai_status}}", "wrap": true, "color": "#ff0000", "size": "sm", "flex": 4, "weight": "bold" }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "link",
+                    "height": "sm",
+                    "action": {
+                        "type": "uri",
+                        "label": "ดูรายละเอียดเพิ่มเติม",
+                        "uri": "{{frontend_url}}/track"
+                    }
+                }
+            ]
+        }
+    },
+    "cancellation": {
+        "type": "bubble",
+        "header": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                { "type": "text", "text": "แจ้งผลการยกเลิกซ่อม", "weight": "bold", "size": "lg", "color": "#ffffff" }
+            ],
+            "backgroundColor": "#c53030",
+            "paddingTop": "20px",
+            "paddingBottom": "20px"
+        },
+        "body": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+                { "type": "text", "text": "คิวงาน {{queue_id}} ยกเลิกเรียบร้อย", "weight": "bold", "size": "md" },
+                { "type": "text", "text": "ขณะนี้เจ้าหน้าที่กำลังนำเครื่องส่งกลับให้คุณตามที่อยู่ที่แจ้งไว้ครับ (จะมีค่าดำเนินการ 100 บาท)", "wrap": true, "size": "sm", "margin": "md", "color": "#666666" },
+                { "type": "text", "text": "เมื่อคุณได้รับเครื่องคืนแล้ว โปรดกดยืนยันด้านล่างนี้ครับ", "wrap": true, "size": "sm", "margin": "lg", "weight": "bold" }
+            ]
+        },
+        "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "contents": [
+                {
+                    "type": "button",
+                    "style": "primary",
+                    "color": "#27ae60",
+                    "action": {
+                        "type": "postback",
+                        "label": "กดยืนยันเมื่อได้รับเครื่องคืน",
+                        "data": "action=confirm_return_cancelled&qid={{queue_id}}"
+                    }
+                }
+            ]
+        }
+    },
+    "advice_data": {
+        "no_power": {
+            "title": "เปิดเครื่องไม่ติด",
+            "advice": "ลองตรวจสอบสายไฟและปลั๊กไฟว่าเสียบแน่นหรือไม่ หากเป็นโน้ตบุ๊ก ลองถอดแบตเตอรี่ออกแล้วเสียบสายชาร์จโดยตรง"
+        },
+        "black_screen": {
+            "title": "หน้าจอดำ",
+            "advice": "ลองกดปุ่ม Windows + Ctrl + Shift + B เพื่อรีเซ็ตไดรเวอร์การ์ดจอ หรือเช็คสายต่อจอว่าแน่นหรือไม่"
+        },
+        "slow_pc": {
+            "title": "เครื่องช้า",
+            "advice": "ลองล้างไฟล์ขยะ (Disk Cleanup) และตรวจสอบโปรแกรมที่รันตอนเริ่มต้น (Task Manager > Startup)"
+        },
+        "wifi": {
+            "title": "Wi-Fi ต่อไม่ได้",
+            "advice": "ลองปิด-เปิดเราเตอร์ใหม่ หรือกด Forget Network แล้วเชื่อมต่ออีกครั้ง"
+        },
+        "hang": {
+            "title": "โปรแกรมค้าง",
+            "advice": "กด Ctrl + Alt + Del เพื่อเรียก Task Manager แล้วสั่ง End Task โปรแกรมที่ค้าง"
+        },
+        "blue_screen": {
+            "title": "จอฟ้า/รีสตาร์ทเอง",
+            "advice": "จดรหัส Error (เช่น 0x00...) เพื่อแจ้งช่างตรวจสอบ หรือลองถอดอุปกรณ์ USB ที่ไม่ได้ใช้งานออก"
+        },
+        "overheat": {
+            "title": "เครื่องร้อน/พัดลมดัง",
+            "advice": "ตรวจสอบว่าไม่มีอะไรมาบังช่องระบายอากาศ และควรนำเครื่องมาทำความสะอาดปัดฝุ่นและทาซิลิโคนใหม่"
+        },
+        "no_sound": {
+            "title": "ไม่มีเสียง/ไมค์ไม่ดัง",
+            "advice": "ตรวจสอบการตั้งค่า Output/Input ใน Sound Settings และเช็คว่าไม่ได้กด Mute ไว้"
+        },
+        "keyboard": {
+            "title": "คีย์บอร์ดพิมพ์ไม่ได้",
+            "advice": "ตรวจสอบว่าปุ่ม Num Lock หรือปุ่ม Fn ค้างหรือไม่ หรือลองรีสตาร์ทเครื่องดูสักครั้ง"
+        }
+    }
+}

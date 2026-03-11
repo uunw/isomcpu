@@ -1,51 +1,32 @@
 """
 Technician router for managing technicians, repairs, and quotations.
 """
-import os
-import shutil
-import uuid
-import subprocess
-from jose import jwt, JWTError
-from PIL import Image
 from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
-from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 
-from ..config import JWT_SECRET_KEY
 from ..database import get_db
 from ..models.technician import Technician
 from ..models.repair_request import RepairRequest
 from ..models.quotation import Quotation
-from ..models.quotation_item import QuotationItem
 from ..models.repair_media import RepairMedia
 from ..schemas.technician import TechnicianResponse, TechnicianCreate
 from ..schemas.quotation import QuotationCreate
 from ..utils.auth import verify_password, create_access_token, get_password_hash
 from ..services.line_service import push_update_notification
-from ..services.repair_service import update_status
+from ..services.repair_service import update_status, get_dashboard_summary
+from ..services.media_service import save_repair_media
+from ..services.quotation_service import create_repair_quotation
+from ..dependencies import get_current_technician
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-
-def get_current_technician(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+@router.get("/dashboard/summary")
+def dashboard_summary(db: Session = Depends(get_db), current_tech: Technician = Depends(get_current_technician)):
     """
-    Get the current authenticated technician from the JWT token.
+    Get dashboard stats and activities.
     """
-    try:
-        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(status_code=401, detail="Token ไม่ถูกต้อง")
-    except JWTError as exc:
-        raise HTTPException(status_code=401, detail="Token หมดอายุหรือผิดพลาด") from exc
-
-    tech = db.query(Technician).filter(Technician.email == email).first()
-    if tech is None:
-        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลช่าง")
-
-    return tech
+    return get_dashboard_summary(db, current_tech.id)
 
 
 @router.get("/all", response_model=list[TechnicianResponse])
@@ -61,8 +42,7 @@ def me(db: Session = Depends(get_db), current_tech: Technician = Depends(get_cur
     """
     Get current technician profile.
     """
-    tech = db.query(Technician).filter(Technician.id == current_tech.id).first()
-    return tech
+    return current_tech
 
 
 @router.get("/info")
@@ -141,6 +121,26 @@ def list_repairs(
     return repairs_list
 
 
+@router.put("/repair/assign")
+def assign_repair(
+    queue_id: str, 
+    tech_id: int, 
+    db: Session = Depends(get_db), 
+    current_tech: Technician = Depends(get_current_technician)
+):
+    """
+    Manually assign a technician to a repair request.
+    """
+    repair = db.query(RepairRequest).filter(RepairRequest.queueId == queue_id).first()
+    if not repair:
+        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลการซ่อม")
+    
+    repair.technicianID = tech_id
+    db.commit()
+    db.refresh(repair)
+    return {"message": "มอบหมายงานสำเร็จ", "technician": repair.technician.displayName}
+
+
 @router.put("/repair/update")
 def update_repair(
     queue_id: str, 
@@ -163,33 +163,10 @@ def update_repair(
 @router.post("/quotation/create")
 def create_quotation(obj_in: QuotationCreate, db: Session = Depends(get_db), current_tech: Technician = Depends(get_current_technician)):
     """
-    Create a new quotation for a repair.
+    Create a new quotation using the Quotation Service.
     """
-    new_quotation = Quotation(
-        repairId=obj_in.repairId,
-        totalPrice=obj_in.totalPrice,
-        technicianNote=obj_in.technicianNote,
-        status="PendingConfirmation",
-    )
-    db.add(new_quotation)
-    db.flush()
-
-    for item in obj_in.items:
-        new_item = QuotationItem(
-            quotationId=new_quotation.id,
-            productName=item.productName,
-            quantity=item.quantity,
-            price=item.price,
-        )
-        db.add(new_item)
-
-    try:
-        db.commit()
-        db.refresh(new_quotation)
-        return {"message": "สร้างใบเสนอราคาสำเร็จ", "quotation_id": new_quotation.id}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    create_repair_quotation(db, obj_in)
+    return {"message": "สร้างใบเสนอราคาสำเร็จ"}
 
 
 @router.post("/repair/upload")
@@ -201,73 +178,9 @@ async def upload_repair_media(
     current_tech: Technician = Depends(get_current_technician)
 ):
     """
-    Upload a media file (image/video) for a specific repair and section.
-    Images are compressed to WebP (80% quality).
-    Videos are compressed to MP4 using FFmpeg (CRF 28).
+    Upload and process media using the Media Service.
     """
-    is_image = file.content_type.startswith("image")
-    is_video = file.content_type.startswith("video")
-    
-    unique_id = str(uuid.uuid4())
-    upload_dir = "uploads"
-    
-    if is_image:
-        filename = f"{unique_id}.webp"
-        file_path = os.path.join(upload_dir, filename)
-        try:
-            img = Image.open(file.file)
-            if img.mode in ("RGBA", "P"):
-                img = img.convert("RGB")
-            img.save(file_path, "WEBP", quality=80)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Image compression failed: {str(e)}")
-            
-    elif is_video:
-        filename = f"{unique_id}.mp4"
-        file_path = os.path.join(upload_dir, filename)
-        temp_input = os.path.join(upload_dir, f"temp_{unique_id}_{file.filename}")
-        
-        with open(temp_input, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        try:
-            # -vcodec libx264: H.264
-            # -crf 28: Good balance of size/quality
-            # -preset faster: Faster encoding
-            # -movflags +faststart: Web optimized
-            cmd = [
-                "ffmpeg", "-i", temp_input,
-                "-vcodec", "libx264", "-crf", "28", "-preset", "faster",
-                "-acodec", "aac", "-b:a", "128k",
-                "-movflags", "+faststart",
-                "-y", file_path
-            ]
-            subprocess.run(cmd, check=True, capture_output=True)
-        except subprocess.CalledProcessError as e:
-            if os.path.exists(file_path): os.remove(file_path)
-            raise HTTPException(status_code=500, detail=f"Video compression failed: {e.stderr.decode()}")
-        finally:
-            if os.path.exists(temp_input):
-                os.remove(temp_input)
-    else:
-        ext = file.filename.split(".")[-1]
-        filename = f"{unique_id}.{ext}"
-        file_path = os.path.join(upload_dir, filename)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-
-    file_type = "image" if is_image else ("video" if is_video else "other")
-    new_media = RepairMedia(
-        repairId=repair_id,
-        fileUrl=f"/uploads/{filename}",
-        fileType=file_type,
-        section=section
-    )
-    db.add(new_media)
-    db.commit()
-    db.refresh(new_media)
-
-    return new_media
+    return save_repair_media(db, repair_id, section, file)
 
 
 @router.get("/repair/{repair_id}/media")

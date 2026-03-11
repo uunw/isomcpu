@@ -1,49 +1,69 @@
-<div class="login-page" style="width: 100vw; height: 100vh;">
-    <div class="background">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
-
-    <div class="container" x-data="{ username: '', password: '' }">
-        <div class="header-text">
-            <h1>Hello, Welcome back</h1>
-            <p>เข้าสู่ระบบเพื่อดู"คิวงานซ่อมของคุณ"</p>
+<div class="login-page" style="width: 100vw; height: 100vh; background: linear-gradient(180deg, #0044cc 0%, #001f3f 100%); display: flex; align-items: center; justify-content: center; font-family: 'Sarabun', sans-serif;">
+    <div class="container" x-data="{ username: '', password: '' }" style="width: 100%; max-width: 450px; padding: 20px;">
+        <div class="header-text" style="text-align: center; color: white; margin-bottom: 2rem;">
+            <p style="font-size: 1.1rem; opacity: 0.9; margin: 0;">เข้าสู่ระบบเพื่อดู"คิวงานซ่อมของคุณ"</p>
         </div>
 
-        <div class="login-card">
-            <div class="logo-section">
-                <div class="logo-icon">
-                    <div class="cpu-wrap">
-                        <div class="cpu-body"></div>
-                        <div class="pin v t1"></div><div class="pin v t2"></div><div class="pin v t3"></div>
-                        <div class="pin v b1"></div><div class="pin v b2"></div><div class="pin v b3"></div>
-                        <div class="pin h l1"></div><div class="pin h l2"></div><div class="pin h l3"></div>
-                        <div class="pin h r1"></div><div class="pin h r2"></div><div class="pin h r3"></div>
+        <div class="login-card" style="background: white; border-radius: 30px; padding: 40px; box-shadow: 0 15px 35px rgba(0,0,0,0.2);">
+            <div class="logo-section" style="text-align: center; margin-bottom: 30px;">
+                <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                    <!-- CPU Icon -->
+                    <div style="flex-shrink: 0;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="45" height="45" viewBox="0 0 48 48">
+                            <rect x="10" y="10" width="28" height="28" rx="4" fill="none" stroke="#001f3f" stroke-width="3"/>
+                            <rect x="18" y="18" width="12" height="12" rx="2" fill="#001f3f"/>
+                            <path d="M15 4v6M24 4v6M33 4v6M15 38v6M24 38v6M33 38v6M4 15h6M4 24h6M4 33h6M38 15h6M38 24h6M38 33h6" stroke="#001f3f" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
                     </div>
-                    <span class="logo-name">I SOM <span>CPU</span></span>
+                    <!-- Horizontal Text -->
+                    <div style="font-size: 2.2rem; font-weight: 900; color: #001f3f; letter-spacing: 1px; white-space: nowrap;">
+                        I SOM CPU
+                    </div>
                 </div>
             </div>
 
             <form @submit.prevent="login(username, password)">
-                <div class="form-group">
-                    <label>ผู้ใช้งาน :</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">👤</span>
-                        <input type="text" x-model="username" placeholder="อีเมลของคุณ" required>
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label style="display: block; font-weight: bold; color: #333; margin-bottom: 8px; font-size: 1rem;">ผู้ใช้งาน :</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 1.2rem;">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" x-model="username" placeholder="อีเมลของคุณ" required 
+                               style="width: 100%; padding: 12px 15px 12px 45px; border-radius: 12px; border: 1px solid #e0e0e0; background: #f8f9fa; font-size: 1rem; color: #333; outline: none;">
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>รหัสผ่าน :</label>
-                    <div class="input-wrapper">
-                        <span class="input-icon">🔒</span>
-                        <input type="password" x-model="password" placeholder="••••••••" required>
+                <div class="form-group" style="margin-bottom: 2.5rem;">
+                    <label style="display: block; font-weight: bold; color: #333; margin-bottom: 8px; font-size: 1rem;">รหัสผ่าน :</label>
+                    <div class="input-wrapper" style="position: relative;">
+                        <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #888; font-size: 1.2rem;">
+                            <i class="fa-solid fa-lock"></i>
+                        </span>
+                        <input type="password" x-model="password" placeholder="••••••••" required 
+                               style="width: 100%; padding: 12px 15px 12px 45px; border-radius: 12px; border: 1px solid #e0e0e0; background: #f8f9fa; font-size: 1rem; color: #333; outline: none;">
                     </div>
                 </div>
 
-                <button type="submit" class="login-button">เข้าสู่ระบบ</button>
+                <button type="submit" class="login-button" 
+                        style="width: 100%; padding: 15px; border-radius: 15px; background: #041e3a; color: white; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: 0.3s;">
+                    เข้าสู่ระบบ
+                </button>
             </form>
         </div>
     </div>
 </div>
+
+<style>
+.login-button:hover {
+    background: #001122 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.login-button:active {
+    transform: translateY(0);
+}
+input::placeholder {
+    color: #bbb;
+}
+</style>
