@@ -1,0 +1,61 @@
+<div class="content-wrapper">
+    <section class="job-list-panel" style="width: 100%; height: 100%;">
+        <div class="panel-title-wrapper">
+            <h2 class="panel-title">ภาพรวมระบบ</h2>
+            <div class="panel-title-divider"></div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-top: 1rem;">
+            <div class="stat-box" style="background: linear-gradient(135deg, #001f3f 0%, #003d7a 100%); color: white; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 12px rgba(0,31,63,0.2);">
+                <div style="font-size: 2.2rem;">📈</div>
+                <div>
+                    <div style="font-size: 1.8rem; font-weight: bold;" x-text="stats.total">0</div>
+                    <div style="font-size: 0.8rem; opacity: 0.8;">งานซ่อมทั้งหมด</div>
+                </div>
+            </div>
+            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.2rem;">⏳</div>
+                <div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #ff9800;" x-text="stats.pending">0</div>
+                    <div style="font-size: 0.8rem; color: #666;">รอดำเนินการ</div>
+                </div>
+            </div>
+            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.2rem;">🛠️</div>
+                <div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #2196f3;" x-text="stats.repairing">0</div>
+                    <div style="font-size: 0.8rem; color: #666;">กำลังซ่อม</div>
+                </div>
+            </div>
+            <div class="stat-box" style="background: #fff; border: 2px solid #eee; padding: 1.5rem; border-radius: 20px; display: flex; align-items: center; gap: 1rem;">
+                <div style="font-size: 2.2rem;">✅</div>
+                <div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #4caf50;" x-text="stats.complete">0</div>
+                    <div style="font-size: 0.8rem; color: #666;">ซ่อมเสร็จแล้ว</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Content -->
+        <div style="margin-top: 2.5rem; display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; flex: 1;">
+            <div style="background: #f8f9fa; border-radius: 20px; padding: 1.5rem; border: 1.5px solid #eef0f5;">
+                <h3 style="color: #001f3f; margin-bottom: 1rem;">แนวโน้มงานซ่อม (7 วันล่าสุด)</h3>
+                <div style="height: 250px; display: flex; align-items: center; justify-content: center; color: #aaa;">
+                    <p>ระบบกราฟกำลังอยู่ระหว่างการพัฒนา</p>
+                </div>
+            </div>
+            <div style="background: #f8f9fa; border-radius: 20px; padding: 1.5rem; border: 1.5px solid #eef0f5;">
+                <h3 style="color: #001f3f; margin-bottom: 1rem;">ช่างประจำวัน</h3>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <template x-for="i in 3" :key="i">
+                        <div style="display: flex; align-items: center; justify-content: space-between; background: white; padding: 10px 15px; border-radius: 12px; border: 1px solid #eee;">
+                            <span style="font-weight: 600; color: #333;">ช่างไข่ แปดริ้ว</span>
+                            <span class="status-badge WAITING_CHECK" style="font-size: 0.7rem;">5 งาน</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

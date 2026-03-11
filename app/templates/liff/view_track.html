@@ -1,0 +1,66 @@
+<template x-if="currentView === 'track'">
+    <div class="form-container">
+        <!-- Queue Number Header -->
+        <div class="queue-number-box">
+            <i class="fa-solid fa-file-lines"></i>
+            <h5 x-text="'คิวงาน : ' + (repairData.queueId || '...')"></h5>
+        </div>
+
+        <!-- Vertical Timeline -->
+        <div class="vertical-timeline mt-2">
+            <template x-for="(stage, index) in timelineStages" :key="index">
+                <div class="timeline-item" :class="{'active': currentStageIndex === index, 'completed': currentStageIndex > index}">
+                    <div class="timeline-marker"></div>
+                    <div class="timeline-content">
+                        <div class="status-label" x-text="statusDisplay[stage]"></div>
+                        <!-- Info only for Active Status -->
+                        <template x-if="currentStageIndex === index">
+                            <div class="status-desc">
+                                <div x-text="getStatusDescription(stage)"></div>
+                                
+                                <!-- Button for QUOTED stage -->
+                                <template x-if="stage === 'QUOTED'">
+                                    <button class="btn btn-primary btn-sm mt-3 w-100" @click="openQuotationModal()" style="border-radius: 20px; background: #0044cc;">
+                                        <i class="fa-solid fa-file-invoice-dollar me-2"></i> คลิกเพื่อดูรายละเอียดใบเสนอราคา / ชำระเงิน
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Order Info Card -->
+        <div class="order-info-card">
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-user"></i></div>
+                <span x-text="repairData.fullName"></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-phone"></i></div>
+                <span x-text="repairData.phoneNumber"></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-location-dot"></i></div>
+                <span class="small" x-text="repairData.address"></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-laptop"></i></div>
+                <span>ประเภท: <span class="fw-bold" x-text="repairData.deviceType"></span></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-circle-question"></i></div>
+                <span>ปัญหา: <span x-text="repairData.problemDetail"></span></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-calendar"></i></div>
+                <span>วันนัดรับเครื่อง: <span x-text="formatDate(repairData.pickupDate)"></span></span>
+            </div>
+            <div class="info-row">
+                <div class="icon-circle"><i class="fa-solid fa-clock"></i></div>
+                <span>ช่วงเวลา: 15:00</span>
+            </div>
+        </div>
+    </div>
+</template>

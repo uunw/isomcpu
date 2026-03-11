@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    {% include 'liff/head.html' %}
+</head>
+<body x-data="liffApp('{{ view }}')" x-init="init()">
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" x-show="!initialized">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3 fw-bold text-dark" x-text="loadingText">กำลังเตรียมความพร้อม...</p>
+    </div>
+
+    <!-- Main Content Wrapper -->
+    <div class="mobile-container" id="main-content" x-show="initialized" x-cloak style="display: none;">
+        {% include 'liff/banner.html' %}
+
+        <!-- Views -->
+        {% include 'liff/view_index.html' %}
+        {% include 'liff/view_track.html' %}
+        {% include 'liff/view_queue.html' %}
+        {% include 'liff/view_return.html' %}
+        {% include 'liff/view_notfound.html' %}
+    </div>
+
+    <!-- Modals -->
+    {% include 'liff/modals.html' %}
+
+    <!-- Scripts -->
+    {% include 'liff/scripts.html' %}
+</body>
+</html>

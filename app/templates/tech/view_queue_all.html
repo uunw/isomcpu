@@ -1,0 +1,104 @@
+<div class="content-wrapper">
+    <section class="job-list-panel" style="width: 100%; height: 100%; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h2 class="panel-title" style="font-size: 2.2rem; font-weight: 800; color: #001f3f;">คิวงานทั้งหมด</h2>
+            
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <div class="search-box" style="width: 300px;">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="ค้นหาเลขงาน/ลูกค้า/อาการ" x-model="search" style="border-radius: 25px; padding: 10px 20px 10px 40px; border: 1px solid #ddd;">
+                </div>
+                <select class="filter-select" x-model="filterStatus" style="background: #001f3f; color: white; border-radius: 25px; padding: 10px 20px; border: none; font-size: 0.9rem;">
+                    <option value="all">สถานะ ▾</option>
+                    <template x-for="status in statusSequence" :key="status">
+                        <option :value="status" x-text="statusDisplay[status]"></option>
+                    </template>
+                </select>
+                <select class="filter-select" style="background: #001f3f; color: white; border-radius: 25px; padding: 10px 20px; border: none; font-size: 0.9rem;">
+                    <option value="all">ช่างซ่อม ▾</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container" style="flex: 1; overflow-y: auto;">
+            <table class="queue-table-modern" style="width: 100%; border-collapse: separate; border-spacing: 0 15px;">
+                <thead>
+                    <tr style="text-align: center; color: #001f3f; font-weight: 800; font-size: 1.1rem;">
+                        <th style="padding: 10px;">คิวงาน</th>
+                        <th style="padding: 10px;">วันที่รับงาน</th>
+                        <th style="padding: 10px;">ลูกค้า</th>
+                        <th style="padding: 10px;">อุปกรณ์</th>
+                        <th style="padding: 10px;">อาการ</th>
+                        <th style="padding: 10px;">สถานะ</th>
+                        <th style="padding: 10px;">ช่างซ่อม</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="item in filteredJobs" :key="item.id">
+                        <tr style="text-align: center; background: transparent; transition: 0.2s;" @click="selectJob(item); switchView('mywork')" class="row-hover">
+                            <td style="padding: 5px;">
+                                <div style="background: #001f3f; color: white; border-radius: 20px; padding: 6px 15px; display: inline-flex; align-items: center; gap: 8px; font-weight: bold;">
+                                    <i class="fa-solid fa-file-lines" style="font-size: 0.9rem;"></i>
+                                    <span x-text="item.queueId"></span>
+                                </div>
+                            </td>
+                            <td style="color: #333; font-weight: 500;" x-text="new Date(item.createdAt).toLocaleDateString('th-TH')"></td>
+                            <td style="color: #333; font-weight: 500;" x-text="item.fullName"></td>
+                            <td style="color: #333; font-weight: 500;" x-text="item.deviceType"></td>
+                            <td style="color: #333; font-weight: 500;" x-text="item.problemType"></td>
+                            <td>
+                                <span class="status-badge-pill" :class="item.status" x-text="statusDisplay[item.status]"></span>
+                            </td>
+                            <td style="color: #333; font-weight: 500;" x-text="item.technician?.displayName || 'รอมอบหมาย'"></td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+            
+            <template x-if="filteredJobs.length === 0">
+                <div style="padding: 5rem; text-align: center; color: #999;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🔍</div>
+                    <p>ไม่พบข้อมูลคิวงานที่ตรงตามเงื่อนไข</p>
+                </div>
+            </template>
+        </div>
+    </section>
+</div>
+
+<style>
+.row-hover:hover {
+    background: rgba(0,31,63,0.03) !important;
+    cursor: pointer;
+}
+.status-badge-pill {
+    display: inline-block;
+    padding: 6px 20px;
+    border-radius: 20px;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    min-width: 140px;
+    text-align: center;
+}
+
+/* Status Colors to match UI exactly */
+.status-badge-pill.PENDING_REPAIR { background: #e74c3c; }
+.status-badge-pill.PICKING_UP { background: #f39c12; }
+.status-badge-pill.RECEIVED { background: #3498db; }
+.status-badge-pill.AT_SHOP { background: #27ae60; }
+
+.status-badge-pill.WAITING_CHECK { background: #95a5a6; }
+.status-badge-pill.DIAGNOSING { background: #3498db; }
+.status-badge-pill.QUOTED { background: #e74c3c; }
+.status-badge-pill.PAID { background: #27ae60; }
+
+.status-badge-pill.REPAIRING { background: #3498db; }
+.status-badge-pill.REPAIRED { background: #27ae60; }
+.status-badge-pill.DELIVERING { background: #f39c12; }
+.status-badge-pill.COMPLETED { background: #27ae60; }
+
+.filter-select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0,31,63,0.2);
+}
+</style>

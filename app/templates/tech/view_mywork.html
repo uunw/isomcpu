@@ -1,0 +1,300 @@
+<div class="content-wrapper">
+    <!-- Left Panel: Job List -->
+    <section class="job-list-panel">
+        <div class="panel-title-wrapper">
+            <h2 class="panel-title">คิวงานของฉัน</h2>
+            <div class="panel-title-divider"></div>
+        </div>
+        <div class="search-filter">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="ค้นหาเลขงาน/ลูกค้า/อาการ" x-model="search">
+            </div>
+            <select class="status-filter" x-model="filterStatus">
+                <option value="all">สถานะทั้งหมด</option>
+                <template x-for="status in statusSequence" :key="status">
+                    <option :value="status" x-text="statusDisplay[status]"></option>
+                </template>
+                <option value="CANCELLED">ยกเลิกการซ่อม</option>
+            </select>
+        </div>
+
+        <div class="job-cards-container">
+            <template x-for="job in paginatedJobs" :key="job.id">
+                <div class="job-card" :class="{ 'active': selectedRepair?.queueId === job.queueId }" @click="selectJob(job)">
+                    <div class="job-header">
+                        <h3>คิวงาน : <span x-text="job.queueId"></span></h3>
+                        <span class="status-badge" :class="job.status" x-text="statusDisplay[job.status]"></span>
+                    </div>
+                    <div class="job-info">
+                        <p><strong>อุปกรณ์:</strong> <span x-text="job.deviceType"></span></p>
+                        <p><strong>ปัญหา:</strong> <span x-text="job.problemType"></span></p>
+                        <p><strong>รายละเอียด:</strong> <span x-text="job.problemDetail || '-'"></span></p>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div class="pagination" x-show="totalPages > 1">
+            <button class="pagination-btn prev" :disabled="page === 1" @click="page--">❮</button>
+            <span class="page-info" x-text="page + '/' + totalPages"></span>
+            <button class="pagination-btn next" :disabled="page === totalPages" @click="page++">❯</button>
+        </div>
+    </section>
+
+    <!-- Right Panel: Job Details -->
+    <section class="job-details-panel">
+        <template x-if="selectedRepair">
+            <div style="height: 100%; display: flex; flex-direction: column;">
+                <div class="details-header">
+                    <div class="details-title-wrapper">
+                        <h2 class="details-panel-title">รายละเอียดงาน</h2>
+                        <div class="panel-title-divider"></div>
+                    </div>
+                    
+                    <template x-if="selectedRepair.status !== 'CANCELLED'">
+                        <button class="add-job-btn">⚠️ แจ้งปัญหาให้ลูกค้า</button>
+                    </template>
+                </div>
+                
+                <div class="job-id-badge" style="margin-bottom: 1.5rem; align-self: flex-start;">
+                    <span class="badge-icon">🔧</span>
+                    <span class="badge-text">คิวงาน : <strong x-text="selectedRepair.queueId"></strong></span>
+                </div>
+
+                <!-- Cancellation Banner -->
+                <template x-if="selectedRepair.status === 'CANCELLED'">
+                    <div style="background: #fff5f5; border: 2px solid #feb2b2; border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+                        <div style="font-size: 2.5rem;">🚫</div>
+                        <div>
+                            <h3 style="color: #c53030; margin: 0; font-weight: 800;">ลูกค้ายกเลิกรายการซ่อม</h3>
+                            <p style="color: #9b2c2c; margin: 5px 0 0 0; font-size: 0.95rem;">โปรดส่งเครื่องกลับไปยังที่อยู่ที่ลูกค้าแจ้งไว้ด้านล่างครับ</p>
+                        </div>
+                    </div>
+                </template>
+
+                <div class="details-content" style="flex: 1; overflow-y: auto; padding-right: 5px;">
+                    <div class="info-section">
+                        <div class="info-row info-row-customer">
+                            <span class="info-icon-customer">👤</span>
+                            <div class="info-text-customer">
+                                <strong>ลูกค้า :</strong>
+                                <span x-text="selectedRepair.fullName || 'ไม่ระบุ'"></span>
+                            </div>
+                        </div>
+                        
+                        <!-- Return Address Highlight for Cancelled -->
+                        <div class="info-row-simple" :style="selectedRepair.status === 'CANCELLED' ? 'background: #fffaf0; border: 1.5px dashed #f6ad55; padding: 10px; border-radius: 12px;' : ''">
+                            <strong :style="selectedRepair.status === 'CANCELLED' ? 'color: #dd6b20;' : ''">📍 ที่อยู่จัดส่งคืน :</strong> 
+                            <span x-text="selectedRepair.address"></span>
+                        </div>
+
+                        <div class="info-row-simple"><strong>อุปกรณ์ :</strong> <span x-text="selectedRepair.deviceType"></span></div>
+                        <div class="info-row-simple"><strong>ปัญหา :</strong> <span x-text="selectedRepair.problemType"></span></div>
+                        <div class="info-row-simple"><strong>รายละเอียด :</strong> <span x-text="selectedRepair.problemDetail || '-'"></span></div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn-primary" @click="openModal('media')">
+                            <span>🖼️</span> รูปภาพ/วิดีโอ
+                        </button>
+                        <button class="btn-secondary" @click="openModal('details')">
+                            <span>📋</span> รายละเอียดการรับ-ส่งเครื่อง
+                        </button>
+                    </div>
+
+                    <!-- Chevron Status Buttons (Hide if cancelled) -->
+                    <template x-if="selectedRepair.status !== 'CANCELLED'">
+                        <div class="status-groups">
+                            <div class="group-label">สถานะ :</div>
+                            <div class="chevron-wrapper">
+                                <template x-for="status in statusSequence.slice(0, 4)" :key="status">
+                                    <button class="chevron-btn" 
+                                        :class="{ 
+                                            [status]: true,
+                                            'active': selectedRepair.status === status,
+                                            'completed': statusSequence.indexOf(selectedRepair.status) > statusSequence.indexOf(status),
+                                            'next': statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1,
+                                            'waiting-customer': status === 'PAID' && selectedRepair.status === 'QUOTED'
+                                        }"
+                                        @click="
+                                            if (status === 'QUOTED') openModal('quotation');
+                                            else if (status === 'PAID') {
+                                                if (selectedRepair.status === 'QUOTED') Swal.fire('รอดำเนินการ', 'ขั้นตอนนี้รอลูกค้าตรวจสอบใบเสนอราคาและชำระเงินผ่าน LINE', 'info');
+                                                else openModal('payment');
+                                            }
+                                            else if(statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1) updateStatus(status)
+                                        "
+                                        :disabled="statusSequence.indexOf(selectedRepair.status) !== statusSequence.indexOf(status) - 1 || (status === 'PAID' && selectedRepair.status === 'QUOTED')"
+                                        x-text="statusDisplay[status]">
+                                    </button>
+                                </template>
+                            </div>
+
+                            <div class="group-label">ขั้นตอนงาน :</div>
+                            <div class="chevron-wrapper">
+                                <template x-for="status in statusSequence.slice(4, 8)" :key="status">
+                                    <button class="chevron-btn" 
+                                        :class="{ 
+                                            [status]: true,
+                                            'active': selectedRepair.status === status,
+                                            'completed': statusSequence.indexOf(selectedRepair.status) > statusSequence.indexOf(status),
+                                            'next': statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1,
+                                            'waiting-customer': status === 'PAID' && selectedRepair.status === 'QUOTED'
+                                        }"
+                                        @click="
+                                            if (status === 'QUOTED') openModal('quotation');
+                                            else if (status === 'PAID') {
+                                                if (selectedRepair.status === 'QUOTED') Swal.fire('รอดำเนินการ', 'ขั้นตอนนี้รอลูกค้าตรวจสอบใบเสนอราคาและชำระเงินผ่าน LINE', 'info');
+                                                else openModal('payment');
+                                            }
+                                            else if(statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1) updateStatus(status)
+                                        "
+                                        :disabled="statusSequence.indexOf(selectedRepair.status) !== statusSequence.indexOf(status) - 1 || (status === 'PAID' && selectedRepair.status === 'QUOTED')"
+                                        x-text="statusDisplay[status]">
+                                    </button>
+                                </template>
+                            </div>
+                            <div class="chevron-wrapper">
+                                <template x-for="status in statusSequence.slice(8, 12)" :key="status">
+                                    <button class="chevron-btn" 
+                                        :class="{ 
+                                            [status]: true,
+                                            'active': selectedRepair.status === status,
+                                            'completed': statusSequence.indexOf(selectedRepair.status) > statusSequence.indexOf(status),
+                                            'next': statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1,
+                                            'waiting-customer': status === 'PAID' && selectedRepair.status === 'QUOTED'
+                                        }"
+                                        @click="
+                                            if (status === 'QUOTED') openModal('quotation');
+                                            else if (status === 'PAID') {
+                                                if (selectedRepair.status === 'QUOTED') Swal.fire('รอดำเนินการ', 'ขั้นตอนนี้รอลูกค้าตรวจสอบใบเสนอราคาและชำระเงินผ่าน LINE', 'info');
+                                                else openModal('payment');
+                                            }
+                                            else if(statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1) updateStatus(status)
+                                        "
+                                        :disabled="statusSequence.indexOf(selectedRepair.status) !== statusSequence.indexOf(status) - 1 || (status === 'PAID' && selectedRepair.status === 'QUOTED')"
+                                        x-text="statusDisplay[status]">
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div class="date-section">
+                        <span class="date-section-icon">🗓️</span>
+                        <div class="date-section-content">
+                            <h3>ระยะเวลางาน :</h3>
+                            <div class="date-inputs">
+                                <div class="date-input-group"><input type="date" :value="selectedRepair.createdAt?.split('T')[0]" disabled style="width: 135px;"></div>
+                                <span class="date-separator">-</span>
+                                <div class="date-input-group"><input type="date" :value="selectedRepair.pickupDate || ''" style="width: 135px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+        <template x-if="!selectedRepair">
+            <div class="no-selection" style="height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #aaa; text-align: center; background: white; border-radius: 40px;">
+                <div style="font-size: 6rem; margin-bottom: 1.5rem; opacity: 0.3;">鼠标🖱️</div>
+                <h2 style="color: #333; margin-bottom: 0.5rem; font-weight: 800;">ยินดีต้อนรับ</h2>
+                <p style="font-size: 1.1rem; max-width: 300px;">กรุณาเลือกงานจากรายการด้านซ้าย<br>เพื่อดูรายละเอียดและจัดการงานซ่อม</p>
+            </div>
+        </template>
+    </section>
+</div>
+
+<style>
+.status-groups {
+    margin-top: 1.5rem;
+    border-top: 1.5px solid #eef0f5;
+    padding-top: 1.2rem;
+}
+.group-label {
+    font-weight: 800;
+    color: #001f3f;
+    margin-bottom: 0.8rem;
+    font-size: 1.15rem;
+}
+.chevron-wrapper {
+    display: flex;
+    margin-bottom: 1.2rem;
+    gap: 4px;
+}
+.chevron-btn {
+    position: relative;
+    height: 48px;
+    padding: 0 10px 0 22px;
+    background: #f1f3f5;
+    border: none;
+    font-size: 0.82rem;
+    color: #495057;
+    cursor: default;
+    clip-path: polygon(0% 0%, 92% 0%, 100% 50%, 92% 100%, 0% 100%, 8% 50%);
+    transition: all 0.25s ease;
+    flex: 1;
+    min-width: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sarabun', sans-serif;
+    font-weight: 600;
+}
+.chevron-btn:first-child {
+    padding-left: 12px;
+    clip-path: polygon(0% 0%, 92% 0%, 100% 50%, 92% 100%, 0% 100%);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+/* Active State Colors with Higher Specificity */
+.chevron-btn.active.PENDING_REPAIR { background: #e74c3c !important; color: white !important; }
+.chevron-btn.active.PICKING_UP { background: #f39c12 !important; color: white !important; }
+.chevron-btn.active.RECEIVED { background: #3498db !important; color: white !important; }
+.chevron-btn.active.AT_SHOP { background: #27ae60 !important; color: white !important; }
+
+.chevron-btn.active.WAITING_CHECK { background: #6c757d !important; color: white !important; }
+.chevron-btn.active.DIAGNOSING { background: #6f42c1 !important; color: white !important; }
+.chevron-btn.active.QUOTED { background: #fd7e14 !important; color: white !important; }
+.chevron-btn.active.PAID { background: #20c997 !important; color: white !important; }
+
+.chevron-btn.active.REPAIRING { background: #007bff !important; color: white !important; }
+.chevron-btn.active.REPAIRED { background: #28a745 !important; color: white !important; }
+.chevron-btn.active.DELIVERING { background: #ffc107 !important; color: #333 !important; }
+.chevron-btn.active.COMPLETED { background: #198754 !important; color: white !important; }
+
+/* Cancelled State Badge */
+.status-badge.CANCELLED { background: #c53030 !important; color: white !important; }
+
+/* Next Step Style */
+.chevron-btn.next {
+    cursor: pointer !important;
+    background: #ffffff !important;
+    border: 2px dashed #007bff !important;
+    color: #007bff !important;
+}
+.chevron-btn.next:hover {
+    background: #f0f7ff !important;
+    transform: scale(1.02);
+}
+
+/* Completed Step Style */
+.chevron-btn.completed {
+    background: #e9ecef !important;
+    color: #adb5bd !important;
+    opacity: 0.8;
+}
+
+.chevron-btn.waiting-customer {
+    background: #fffbe6 !important;
+    border: 2px solid #ffc107 !important;
+    color: #856404 !important;
+    cursor: wait !important;
+}
+
+.job-card.active .status-badge {
+    background: rgba(255,255,255,0.2) !important;
+    color: white !important;
+}
+</style>

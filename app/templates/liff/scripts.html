@@ -1,0 +1,297 @@
+<script>
+    function liffApp(initialView) {
+        return {
+            currentView: initialView,
+            initialized: false,
+            loadingText: 'กำลังเตรียมความพร้อม...',
+            submitting: false,
+            profile: {},
+            
+            // --- Index Form Data ---
+            formData: {
+                fullName: '', phoneNumber: '', addressMain: '', subDistrict: '', 
+                district: '', province: '', zipCode: '', deviceType: '', 
+                problemType: '', problemDetail: '', pickupDate: '', pickupTime: ''
+            },
+
+            // --- Track Data ---
+            repairData: {},
+            quotationData: null,
+            timelineStages: [
+                "PENDING_REPAIR", "PICKING_UP", "RECEIVED", "AT_SHOP",
+                "WAITING_CHECK", "DIAGNOSING", "QUOTED", "PAID",
+                "REPAIRING", "REPAIRED", "DELIVERING", "COMPLETED"
+            ],
+            statusDisplay: {
+                "PENDING_REPAIR": "ส่งคำขอซ่อม",
+                "PICKING_UP": "กำลังไปรับเครื่อง",
+                "RECEIVED": "รับเครื่องแล้ว",
+                "AT_SHOP": "เครื่องถึงร้าน",
+                "WAITING_CHECK": "รอเช็คปัญหา",
+                "DIAGNOSING": "ตรวจเช็คปัญหา",
+                "QUOTED": "ส่งใบเสนอราคา",
+                "PAID": "จ่ายเงินแล้ว",
+                "REPAIRING": "กำลังซ่อม",
+                "REPAIRED": "ซ่อมเสร็จแล้ว",
+                "DELIVERING": "กำลังส่งเครื่องกลับ",
+                "COMPLETED": "ลูกค้ากดรับเครื่องแล้ว",
+                "CANCELLED": "ยกเลิกการซ่อม"
+            },
+            statusMap: {
+                "PENDING_REPAIR": 0, "PICKING_UP": 1, "RECEIVED": 2, "AT_SHOP": 3,
+                "WAITING_CHECK": 4, "DIAGNOSING": 5, "QUOTED": 6, "PAID": 7,
+                "REPAIRING": 8, "REPAIRED": 9, "DELIVERING": 10, "COMPLETED": 11
+            },
+
+            getStatusDescription(stage) {
+                const descriptions = {
+                    "PENDING_REPAIR": "ได้รับข้อมูลการแจ้งซ่อมแล้ว ระบบกำลังจัดลำดับคิว",
+                    "PICKING_UP": "เจ้าหน้าที่กำลังเดินทางไปรับเครื่องตามที่อยู่ที่คุณแจ้งไว้",
+                    "DIAGNOSING": "ช่างกำลังตรวจสอบหาสาเหตุของปัญหา",
+                    "REPAIRING": "ช่างกำลังดำเนินการซ่อมแซมเครื่องของคุณ",
+                    "QUOTED": "ระบบได้ส่งใบเสนอราคาให้คุณแล้ว โปรดตรวจสอบและยืนยัน",
+                    "PAID": "ได้รับยอดชำระเรียบร้อยแล้ว ช่างจะเริ่มดำเนินการทันที",
+                    "REPAIRED": "ดำเนินการซ่อมแซมเสร็จเรียบร้อยแล้ว"
+                };
+                return descriptions[stage] || "กำลังดำเนินการในขั้นตอนถัดไป";
+            },
+
+            get currentStageIndex() {
+                if (!this.repairData.status) return 0;
+                return this.statusMap[this.repairData.status] ?? 0;
+            },
+
+            // --- Stats ---
+            stats: { pending: 3, repairing: 0 },
+            lastUpdate: '',
+
+            // --- Return Form ---
+            returnForm: { fullName: '', phoneNumber: '', address: '', date: '', time: '' },
+
+            async init() {
+                try {
+                    await liff.init({ liffId: "2009179011-zi2JZ0h4" });
+                    
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                        return;
+                    }
+
+                    if (window.location.search.includes("code=")) {
+                        const url = new URL(window.location.href);
+                        url.searchParams.delete("code"); url.searchParams.delete("state");
+                        url.searchParams.delete("liffClientId"); url.searchParams.delete("liffRedirectUri");
+                        window.history.replaceState({}, document.title, url.pathname);
+                    }
+
+                    try {
+                        this.profile = await liff.getProfile();
+                    } catch (profileErr) {
+                        if (profileErr.message && profileErr.message.toLowerCase().includes("expired")) {
+                            liff.logout();
+                            liff.login();
+                            return;
+                        }
+                        throw profileErr;
+                    }
+                    
+                    if (this.currentView === 'index') {
+                        this.formData.pickupDate = new Date().toISOString().split('T')[0];
+                        this.formData.fullName = this.profile.displayName;
+                    } else if (this.currentView === 'track') {
+                        await this.fetchTrackData();
+                    } else if (this.currentView === 'queue') {
+                        await this.fetchStats();
+                    } else if (this.currentView === 'return') {
+                        this.returnForm.fullName = this.profile.displayName;
+                        this.returnForm.date = new Date().toISOString().split('T')[0];
+                    }
+                    
+                    this.initialized = true;
+                } catch (err) {
+                    if (err.message && err.message.toLowerCase().includes("expired")) {
+                        liff.logout();
+                        liff.login();
+                        return;
+                    }
+                    this.loadingText = 'เกิดข้อผิดพลาด: ' + err.message;
+                }
+            },
+
+            async fetchTrackData() {
+                const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/track?line_user_id=${this.profile.userId}`, {
+                    headers: { 'ngrok-skip-browser-warning': 'true' }
+                });
+                if (res.status === 404) {
+                    window.location.href = "/notfound-track";
+                } else {
+                    this.repairData = await res.json();
+                    if (['QUOTED', 'PAID', 'REPAIRING', 'REPAIRED', 'DELIVERING', 'COMPLETED'].includes(this.repairData.status)) {
+                        await this.fetchQuotation();
+                    }
+                }
+            },
+
+            async fetchQuotation() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/quotation?repair_id=${this.repairData.id}`, {
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    if (res.ok) this.quotationData = await res.json();
+                } catch (e) { console.error('Fetch quotation error:', e); }
+            },
+
+            async fetchStats() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, {
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    if (res.ok) {
+                        const all = await res.json();
+                        this.stats.pending = all.filter(r => r.status === 'PENDING_REPAIR').length;
+                        this.stats.repairing = all.filter(r => r.status === 'REPAIRING').length;
+                        this.lastUpdate = new Date().toLocaleTimeString('th-TH');
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            openConfirmModal() {
+                new bootstrap.Modal(document.getElementById('confirmModal')).show();
+            },
+
+            openQuotationModal() {
+                new bootstrap.Modal(document.getElementById('customerQuotationModal')).show();
+            },
+
+            openPaymentModal() {
+                new bootstrap.Modal(document.getElementById('customerPaymentModal')).show();
+            },
+
+            openReturnConfirm() {
+                new bootstrap.Modal(document.getElementById('confirmReturnModal')).show();
+            },
+
+            async confirmRepair() {
+                if (!confirm("คุณต้องการยืนยันการซ่อมตามใบเสนอราคานี้ใช่หรือไม่?")) return;
+                bootstrap.Modal.getInstance(document.getElementById('customerQuotationModal')).hide();
+                this.openPaymentModal();
+            },
+
+            async cancelRepair() {
+                const { value: addressOption } = await Swal.fire({
+                    title: 'ยืนยันการยกเลิกซ่อม',
+                    text: 'การยกเลิกจะมีค่าดำเนินการตรวจเช็ค 100 บาท กรุณาเลือกที่อยู่ในการส่งเครื่องคืน',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#0044cc',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'ดำเนินการต่อ',
+                    cancelButtonText: 'กลับไปก่อน',
+                    input: 'radio',
+                    inputOptions: {
+                        'current': `ใช้ที่อยู่เดิม (${this.repairData.address})`,
+                        'new': 'ระบุที่อยู่ใหม่'
+                    },
+                    inputValidator: (value) => {
+                        if (!value) return 'กรุณาเลือกที่อยู่จัดส่งคืน'
+                    }
+                });
+
+                if (!addressOption) return;
+
+                let finalAddress = this.repairData.address;
+                if (addressOption === 'new') {
+                    const { value: newAddress } = await Swal.fire({
+                        title: 'ระบุที่อยู่ใหม่',
+                        input: 'textarea',
+                        inputPlaceholder: 'กรอกที่อยู่จัดส่งคืนที่นี่...',
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            if (!value) return 'กรุณากรอกที่อยู่ใหม่'
+                        }
+                    });
+                    if (!newAddress) return;
+                    finalAddress = newAddress;
+                }
+
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/update-status-customer?queue_id=${this.repairData.queueId}&new_status=CANCELLED&new_address=${encodeURIComponent(finalAddress)}`, {
+                        method: 'PUT',
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    if (res.ok) {
+                        await Swal.fire('ยกเลิกสำเร็จ', 'เจ้าหน้าที่จะดำเนินการนัดหมายส่งเครื่องคืนตามที่อยู่ที่แจ้งไว้ครับ', 'success');
+                        location.reload();
+                    }
+                } catch (e) { Swal.fire('ผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error'); }
+            },
+
+            async simulatePaymentSuccess() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/update-status-customer?queue_id=${this.repairData.queueId}&new_status=PAID`, {
+                        method: 'PUT',
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    if (res.ok) {
+                        alert("จำลองการชำระเงินสำเร็จ!");
+                        location.reload();
+                    }
+                } catch (e) { alert("เกิดข้อผิดพลาด"); }
+            },
+
+            getFullAddress() {
+                const { addressMain, subDistrict, district, province, zipCode } = this.formData;
+                return `${addressMain} ${subDistrict} ${district} ${province} ${zipCode}`.trim();
+            },
+
+            formatDate(dateStr) {
+                if (!dateStr) return "-";
+                try {
+                    const date = new Date(dateStr);
+                    return date.toLocaleDateString('th-TH', { 
+                        day: '2-digit', month: '2-digit', year: 'numeric' 
+                    });
+                } catch (e) { return dateStr; }
+            },
+
+            async submitRepair() {
+                this.submitting = true;
+                const payload = {
+                    lineUserId: this.profile.userId,
+                    fullName: this.formData.fullName,
+                    phoneNumber: this.formData.phoneNumber,
+                    queueId: "A" + Math.floor(Math.random() * 900000 + 100000),
+                    deviceType: this.formData.deviceType,
+                    problemType: this.formData.problemType,
+                    problemDetail: this.formData.problemDetail,
+                    address: this.getFullAddress(),
+                    deliveryDate: new Date().toISOString().split('T')[0],
+                    pickupDate: this.formData.pickupDate
+                };
+
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/create`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        alert("แจ้งซ่อมสำเร็จ! ระบบจะนำคุณไปหน้าติดตามสถานะ");
+                        window.location.href = '/track';
+                    } else {
+                        const err = await res.json();
+                        alert("ผิดพลาด: " + JSON.stringify(err.detail));
+                    }
+                } catch (e) { alert("เชื่อมต่อล้มเหลว: " + e.message); }
+                finally { this.submitting = false; }
+            },
+
+            async submitReturn() {
+                alert("บันทึกข้อมูลการรับเครื่องสำเร็จ!");
+                liff.closeWindow();
+            }
+        }
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

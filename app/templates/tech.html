@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="th" x-data="techApp()" x-init="init()">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I SOM CPU - Technician Dashboard</title>
+    
+    <!-- Google Fonts (Sarabun) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- CSS Assets -->
+    <link rel="stylesheet" href="/tech-assets/style.css">
+    <!-- Dynamic View CSS with Fallback -->
+    <link rel="stylesheet" id="view-css" :href="'/tech-assets/' + (['mywork', 'overview', 'queue-all'].includes(view) ? view : 'mywork') + '.css'">
+    
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="/tech-assets/config.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .view-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body style="background: #F5F5F5;" x-cloak>
+
+    <!-- Login View (No Token) -->
+    <template x-if="!token">
+        {% include 'tech/view_login.html' %}
+    </template>
+
+    <!-- Main Dashboard (Authenticated) -->
+    <template x-if="token">
+        <div style="display: flex; height: 100vh; width: 100vw; overflow: hidden;">
+            <!-- Sidebar -->
+            {% include 'tech/nav.html' %}
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                <div x-show="view === 'mywork'" class="view-container">
+                    {% include 'tech/view_mywork.html' %}
+                </div>
+                <div x-show="view === 'overview'" class="view-container">
+                    {% include 'tech/view_overview.html' %}
+                </div>
+                <div x-show="view === 'queue-all'" class="view-container">
+                    {% include 'tech/view_queue_all.html' %}
+                </div>
+                <div x-show="view === 'tech-manage'" class="view-container">
+                    {% include 'tech/view_tech_manage.html' %}
+                </div>
+            </main>
+        </div>
+    </template>
+
+    <!-- Global Modals -->
+    {% include 'tech/modals.html' %}
+
+    <!-- Alpine.js Logic -->
+    {% include 'tech/scripts.html' %}
+
+</body>
+</html>

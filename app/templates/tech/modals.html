@@ -1,0 +1,259 @@
+<!-- Global Modal System -->
+<div class="modal-overlay" 
+     x-show="modalOpen" 
+     x-transition.opacity 
+     @click.self="modalOpen = false" 
+     x-cloak 
+     style="display: none;"> <!-- ใช้ inline style ซ่อนไว้ก่อนเพื่อความชัวร์ -->
+    
+    <!-- 1. Device/Customer Details Modal -->
+    <template x-if="modalType === 'details' && selectedRepair">
+        <div class="modal-container" x-show="modalOpen" x-transition.scale>
+            <div class="modal-header">
+                <h2>รายละเอียดการรับเครื่อง</h2>
+                <button class="modal-close" @click="modalOpen = false">✕</button>
+            </div>
+            <div class="modal-content">
+                <div class="modal-info-row">
+                    <span class="modal-icon">👤</span>
+                    <div class="modal-info-text">
+                        <strong>ลูกค้า :</strong>
+                        <span x-text="selectedRepair.fullName || 'ไม่ระบุ'"></span>
+                    </div>
+                </div>
+                <div class="modal-info-row">
+                    <span class="modal-icon">📍</span>
+                    <div class="modal-info-text">
+                        <strong>ที่อยู่ :</strong>
+                        <span x-text="selectedRepair.address || '-'"></span>
+                    </div>
+                </div>
+                <div class="modal-info-row">
+                    <span class="modal-icon">📞</span>
+                    <div class="modal-info-text">
+                        <strong>เบอร์โทร :</strong>
+                        <span x-text="selectedRepair.phoneNumber || '-'"></span>
+                    </div>
+                </div>
+                <div class="modal-info-row">
+                    <span class="modal-icon">📅</span>
+                    <div class="modal-info-text">
+                        <strong>วันที่แจ้ง :</strong>
+                        <span x-text="new Date(selectedRepair.createdAt).toLocaleDateString('th-TH')"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 2. Media Gallery Modal -->
+    <template x-if="modalType === 'media' && selectedRepair">
+        <div class="modal-container media-modal" x-show="modalOpen" x-transition.scale x-data="{
+            sections: [
+                { id: 'BEFORE', label: 'ก่อนซ่อม :' },
+                { id: 'INITIAL', label: 'เครื่องถึงร้าน :' },
+                { id: 'DURING', label: 'อยู่ระหว่างการซ่อม :' },
+                { id: 'AFTER', label: 'ซ่อมเสร็จแล้ว :' }
+            ],
+            async triggerUpload(sectionId) {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*,video/*';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (file) await uploadMedia(file, sectionId);
+                };
+                input.click();
+            }
+        }">
+            <div class="modal-header" style="background: #001f3f;">
+                <h2 style="color: white; width: 100%; text-align: center; margin: 0;">รูปภาพ/วิดีโอ</h2>
+                <button class="modal-close" @click="modalOpen = false">✕</button>
+            </div>
+            <div class="modal-content media-content" style="background: #f8f9fa;">
+                <template x-for="sec in sections" :key="sec.id">
+                    <div class="media-card-box" style="background: white; border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 x-text="sec.label" style="font-size: 1.1rem; color: #001f3f; font-weight: 800;"></h3>
+                            <button class="edit-btn-small" @click="triggerUpload(sec.id)" style="background: #001f3f; color: white; border: none; border-radius: 12px; padding: 4px 15px; font-size: 0.75rem; cursor: pointer; font-weight: 600;">Edit</button>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <button style="background: none; border: none; font-size: 1.5rem; color: #5a5a8a; cursor: pointer;"><i class="fa-solid fa-chevron-left"></i></button>
+                            
+                            <div style="flex: 1; min-height: 120px; display: flex; align-items: center; justify-content: center; gap: 10px; overflow-x: auto;">
+                                <template x-for="m in media.filter(item => item.section === sec.id)" :key="m.id">
+                                    <div style="width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid #eee; flex-shrink: 0; cursor: pointer;" @click="window.open(m.fileUrl)">
+                                        <template x-if="m.fileType === 'image'">
+                                            <img :src="m.fileUrl" style="width: 100%; height: 100%; object-fit: cover;">
+                                        </template>
+                                        <template x-if="m.fileType === 'video'">
+                                            <div style="width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                                                <i class="fa-solid fa-circle-play"></i>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                                
+                                <template x-if="media.filter(item => item.section === sec.id).length === 0">
+                                    <div style="text-align: center; color: #e0e0e0; display: flex; flex-direction: column; align-items: center;">
+                                        <div style="font-size: 3rem; line-height: 1; font-weight: 300; margin-bottom: 5px;">✕</div>
+                                        <p style="color: #999; font-size: 0.8rem; margin: 0;">ยังไม่มีรูปหรือวิดีโอ</p>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <button style="background: none; border: none; font-size: 1.5rem; color: #5a5a8a; cursor: pointer;"><i class="fa-solid fa-chevron-right"></i></button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+
+    <!-- 3. Quotation Modal -->
+    <template x-if="modalType === 'quotation' && selectedRepair">
+        <div class="modal-container large-modal" x-show="modalOpen" x-transition.scale>
+            <div class="modal-header" style="background: #001f3f;">
+                <h2 style="color: white; width: 100%; text-align: center; margin: 0;">ใบเสนอราคา</h2>
+                <button class="modal-close" @click="modalOpen = false">✕</button>
+            </div>
+            <div class="modal-content" x-data="{ 
+                items: [{ productName: '', quantity: 1, price: 0 }],
+                note: '',
+                get total() { return this.items.reduce((sum, item) => sum + (item.quantity * item.price), 0) }
+            }">
+                <div class="quotation-top-info" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #001f3f; color: white; padding: 8px 15px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-invoice"></i> คิวงาน : <span x-text="selectedRepair.queueId"></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span>วันที่ออกใบเสนอราคา :</span>
+                        <input type="date" :value="new Date().toISOString().split('T')[0]" style="border: 1px solid #ddd; border-radius: 15px; padding: 5px 10px;">
+                    </div>
+                </div>
+
+                <div class="customer-info-bar" style="display: flex; gap: 2rem; margin-bottom: 1rem; font-size: 0.95rem;">
+                    <div><strong>👤 ลูกค้า :</strong> <span x-text="selectedRepair.fullName"></span></div>
+                    <div><strong>อุปกรณ์ :</strong> <span x-text="selectedRepair.deviceType"></span></div>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <strong>อาการ/ปัญหา (จากลูกค้า) :</strong>
+                    <input type="text" :value="selectedRepair.problemDetail" disabled style="width: 100%; border: 1px solid #eee; background: #f9f9f9; border-radius: 15px; padding: 8px 15px; margin-top: 5px;">
+                </div>
+
+                <h3 style="margin-bottom: 10px; color: #001f3f;">รายการซ่อม / ค่าใช้จ่าย</h3>
+                <div class="items-table">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr 40px; gap: 10px; background: #ddd; padding: 8px; border-radius: 15px 15px 0 0; font-weight: bold; font-size: 0.85rem; text-align: center;">
+                        <div>รายการ</div><div>จำนวน</div><div>ราคา</div><div>รวม</div><div></div>
+                    </div>
+                    <div style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 0 0 15px 15px;">
+                        <template x-for="(item, index) in items" :key="index">
+                            <div style="display: grid; grid-template-columns: 3fr 1fr 1fr 1fr 40px; gap: 10px; padding: 10px; border-bottom: 1px solid #eee; align-items: center;">
+                                <input type="text" x-model="item.productName" placeholder="รายการซ่อม/อะไหล่" style="border: 1px solid #eee; border-radius: 15px; padding: 5px 10px; font-size: 0.85rem;">
+                                <input type="number" x-model="item.quantity" style="border: 1px solid #eee; border-radius: 15px; padding: 5px; text-align: center; font-size: 0.85rem;">
+                                <input type="number" x-model="item.price" style="border: 1px solid #eee; border-radius: 15px; padding: 5px; text-align: center; font-size: 0.85rem;">
+                                <div x-text="item.quantity * item.price" style="text-align: center; font-weight: bold;"></div>
+                                <button @click="items.splice(index, 1)" style="color: #ff4d4d; background: none; border: none; cursor: pointer;">✕</button>
+                            </div>
+                        </template>
+                    </div>
+                    <button @click="items.push({ productName: '', quantity: 1, price: 0 })" style="margin-top: 10px; background: #e3f2fd; color: #007bff; border: none; padding: 5px 15px; border-radius: 15px; cursor: pointer; font-size: 0.85rem; font-weight: bold;">+ เพิ่มรายการ</button>
+                </div>
+
+                <div style="display: flex; justify-content: flex-end; margin-top: 15px;">
+                    <div style="background: #001f3f; color: white; padding: 10px 30px; border-radius: 20px; display: flex; gap: 2rem; align-items: center;">
+                        <span>ยอดสุทธิ</span>
+                        <span style="font-size: 1.5rem; font-weight: bold;" x-text="total"></span>
+                        <span>บาท</span>
+                    </div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <strong>หมายเหตุจากช่าง</strong>
+                    <textarea x-model="note" rows="3" style="width: 100%; border: 1px solid #ddd; border-radius: 15px; padding: 10px; margin-top: 5px; font-family: inherit; font-size: 0.9rem;"></textarea>
+                </div>
+
+                <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 2rem;">
+                    <button class="btn-secondary" style="background: #eee; color: #333; padding: 10px 30px; border-radius: 25px;" @click="modalOpen = false">บันทึกร่าง</button>
+                    <button class="btn-primary" style="background: #0044cc; color: white; padding: 10px 40px; border-radius: 25px;" 
+                        @click="submitQuotation({ repairId: selectedRepair.id, totalPrice: total, technicianNote: note, items: items })">
+                        ส่งใบเสนอราคา
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 4. Payment Modal -->
+    <template x-if="modalType === 'payment' && selectedRepair">
+        <div class="modal-container" x-show="modalOpen" x-transition.scale>
+            <div class="modal-header" style="background: #001f3f;">
+                <h2 style="color: white; width: 100%; text-align: center; margin: 0;">สถานะการชำระเงิน</h2>
+                <button class="modal-close" @click="modalOpen = false">✕</button>
+            </div>
+            <div class="modal-content" style="text-align: center;">
+                <div class="quotation-top-info" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div style="background: #001f3f; color: white; padding: 5px 15px; border-radius: 20px; font-size: 0.9rem;">
+                        คิวงาน : <span x-text="selectedRepair.queueId"></span>
+                    </div>
+                    <div style="font-size: 0.9rem; text-align: left;">สถานะ: <span style="color: #ffc107; font-weight: bold;">รอลูกค้ายืนยันและชำระเงิน</span></div>
+                </div>
+
+                <div style="text-align: left; margin-bottom: 1.5rem; font-size: 0.95rem;">
+                    <div><strong>👤 ลูกค้า :</strong> <span x-text="selectedRepair.fullName"></span></div>
+                </div>
+
+                <div style="background: #fffbe6; border: 1px solid #ffe58f; border-radius: 15px; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">⏳</div>
+                    <h4 style="color: #856404; margin-bottom: 0.5rem;">อยู่ระหว่างรอลูกค้าดำเนินการ</h4>
+                    <p style="color: #856404; font-size: 0.9rem;">ลูกค้าได้รับใบเสนอราคาผ่านทาง LINE แล้ว<br>เมื่อลูกค้ากดชำระเงิน ระบบจะอัปเดตสถานะให้อัตโนมัติ</p>
+                </div>
+
+                <div style="border-top: 1px dashed #ddd; padding-top: 1rem;">
+                    <p style="font-size: 0.75rem; color: #ff4d4d; font-weight: bold; margin-bottom: 10px;">[ สำหรับช่าง: เมนูทดสอบระบบ ]</p>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn-primary" style="background: #28a745; flex: 1; padding: 10px; border-radius: 25px; font-size: 0.85rem;"
+                            @click="updateStatus('PAID')">
+                            จำลอง: ลูกค้าชำระเงินแล้ว
+                        </button>
+                        <button class="btn-secondary" style="background: #dc3545; color: white; flex: 1; padding: 10px; border-radius: 25px; font-size: 0.85rem;"
+                            @click="updateStatus('DIAGNOSING')">
+                            จำลอง: ลูกค้าปฏิเสธ/ยกเลิก
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+
+<style>
+.modal-overlay {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.7);
+    display: flex; /* นำ !important ออกเพื่อให้ x-show ทำงานได้ */
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+.modal-container {
+    background: #fff;
+    color: #333;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    position: relative;
+}
+.large-modal { max-width: 800px; }
+.media-modal { max-width: 750px; }
+.media-content { max-height: 80vh; overflow-y: auto; }
+.edit-btn-small:hover { background: #003570; }
+</style>

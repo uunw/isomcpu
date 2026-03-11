@@ -1,0 +1,56 @@
+<div class="sidebar-wrapper">
+    <aside class="sidebar">
+        <div class="logo-section">
+            <div class="logo-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+                  <rect x="8" y="8" width="32" height="32" rx="6" ry="6" fill="white" stroke="#001f3f" stroke-width="3"/>
+                  <rect x="16" y="16" width="16" height="16" rx="3" ry="3" fill="#001f3f"/>
+                  <rect x="13" y="2"  width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="21" y="2"  width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="29" y="2"  width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="13" y="39" width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="21" y="39" width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="29" y="39" width="2.5" height="7" rx="1" fill="#001f3f"/>
+                  <rect x="2"  y="13" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                  <rect x="2"  y="21" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                  <rect x="2"  y="29" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                  <rect x="39" y="13" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                  <rect x="39" y="21" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                  <rect x="39" y="29" width="7" height="2.5" rx="1" fill="#001f3f"/>
+                </svg>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <div @click="switchView('mywork')" class="nav-item" :class="{ 'active': view === 'mywork' }">
+                <span class="nav-icon">🖥️</span>
+                <span class="nav-text">คิวงานของฉัน</span>
+            </div>
+            <div @click="switchView('queue-all')" class="nav-item" :class="{ 'active': view === 'queue-all' }">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">คิวงานทั้งหมด</span>
+            </div>
+            <div @click="switchView('overview')" class="nav-item" :class="{ 'active': view === 'overview' }">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">ภาพรวม</span>
+            </div>
+            <div @click="switchView('tech-manage')" class="nav-item" :class="{ 'active': view === 'tech-manage' }">
+                <span class="nav-icon">👨‍🔧</span>
+                <span class="nav-text">จัดการทีมช่าง</span>
+            </div>
+        </nav>
+
+        <div class="user-profile">
+            <div class="profile-label">ช่างปัจจุบัน</div>
+            <div class="profile-name-badge" x-text="user?.displayName || '...'"></div>
+            <div class="profile-avatar">
+                <img :src="user?.profileImage || '/tech-assets/img/profile_kai.png'" alt="User Avatar">
+            </div>
+            <div class="logout-divider"></div>
+            <span class="logout-label">ออกจากระบบ</span>
+            <div @click="logout()" class="chat-button">
+                <span class="chat-icon">🚪</span>
+            </div>
+        </div>
+    </aside>
+</div>

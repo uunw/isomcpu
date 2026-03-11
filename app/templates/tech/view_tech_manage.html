@@ -1,0 +1,99 @@
+<div class="content-wrapper">
+    <section class="job-list-panel" style="width: 100%; height: 100%; padding: 2.5rem; display: flex; flex-direction: column;">
+        <div class="panel-title-wrapper">
+            <h2 class="panel-title">จัดการทีมช่าง</h2>
+            <div class="panel-title-divider"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; margin-top: 2rem; flex: 1; overflow: hidden;">
+            <!-- Left: Add New Tech Form -->
+            <div style="background: #f8f9fa; padding: 2rem; border-radius: 25px; border: 1.5px solid #eef0f5; overflow-y: auto;">
+                <h3 style="color: #001f3f; margin-bottom: 1.5rem;"><i class="fa-solid fa-user-plus"></i> เพิ่มช่างคนใหม่</h3>
+                
+                <form x-data="{ form: { email: '', password: '', displayName: '', firstName: '', lastName: '', phoneNumber: '' } }" 
+                      @submit.prevent="registerNewTech(form)">
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">อีเมลสำหรับเข้าสู่ระบบ :</label>
+                        <input type="email" x-model="form.email" required placeholder="example@email.com" style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">รหัสผ่านเริ่มต้น :</label>
+                        <input type="password" x-model="form.password" required placeholder="••••••••" style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">ชื่อที่แสดง (Display Name) :</label>
+                        <input type="text" x-model="form.displayName" required placeholder="ช่าง..." style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">ชื่อจริง :</label>
+                            <input type="text" x-model="form.firstName" required style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">นามสกุล :</label>
+                            <input type="text" x-model="form.lastName" required style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 2rem;">
+                        <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: bold; color: #666;">เบอร์โทรศัพท์ :</label>
+                        <input type="text" x-model="form.phoneNumber" required placeholder="0XX-XXX-XXXX" style="width: 100%; padding: 10px 15px; border-radius: 12px; border: 1px solid #ddd;">
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; border-radius: 15px; background: #001f3f; font-weight: bold; color: white; border: none; cursor: pointer;">
+                        ลงทะเบียนช่างคนใหม่
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right: Technician List -->
+            <div style="background: white; border-radius: 25px; border: 1.5px solid #eef0f5; padding: 2rem; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h3 style="color: #001f3f; margin: 0;"><i class="fa-solid fa-users-gear"></i> รายชื่อช่างในระบบ</h3>
+                    <span style="background: #e3f2fd; color: #007bff; padding: 4px 12px; border-radius: 15px; font-size: 0.8rem; font-weight: bold;" x-text="allTechnicians.length + ' คน'"></span>
+                </div>
+
+                <div style="flex: 1; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 2px solid #f8f9fa; color: #999; font-size: 0.85rem;">
+                                <th style="padding: 10px 5px;">ช่างซ่อม</th>
+                                <th style="padding: 10px 5px;">อีเมล</th>
+                                <th style="padding: 10px 5px;">เบอร์โทร</th>
+                                <th style="padding: 10px 5px; text-align: center;">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="t in allTechnicians" :key="t.id">
+                                <tr style="border-bottom: 1px solid #f8f9fa;">
+                                    <td style="padding: 15px 5px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <img :src="t.profileImage || '/tech-assets/img/profile_kai.png'" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #eee;">
+                                            <div style="font-weight: 600; color: #333;" x-text="t.displayName"></div>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px 5px; font-size: 0.85rem; color: #666;" x-text="t.email"></td>
+                                    <td style="padding: 15px 5px; font-size: 0.85rem; color: #666;" x-text="t.phoneNumber"></td>
+                                    <td style="padding: 15px 5px; text-align: center;">
+                                        <span style="background: #e8f5e9; color: #2e7d32; padding: 3px 10px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">Active</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                    
+                    <template x-if="allTechnicians.length === 0">
+                        <div style="text-align: center; padding: 3rem; color: #ccc;">
+                            <i class="fa-solid fa-user-slash" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                            <p>ไม่พบข้อมูลช่างในระบบ</p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

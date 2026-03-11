@@ -1,0 +1,310 @@
+<script>
+    function techApp() {
+        return {
+            view: '{{ view }}' || 'mywork',
+            token: localStorage.getItem('tech_token'),
+            user: null,
+            initialized: false,
+            
+            // --- Global Data ---
+            jobs: [], // My Work jobs
+            allRepairs: [], // All jobs in shop
+            allTechnicians: [], // All techs in system
+            stats: { total: 0, pending: 0, repairing: 0, complete: 0 },
+            
+            // --- Filter & UI State ---
+            search: '',
+            filterStatus: 'all',
+            page: 1,
+            perPage: 5,
+            selectedRepair: null,
+            media: [], 
+            modalOpen: false,
+            modalType: '',
+
+            statusSequence: [
+                "PENDING_REPAIR", "PICKING_UP", "RECEIVED", "AT_SHOP",
+                "WAITING_CHECK", "DIAGNOSING", "QUOTED", "PAID",
+                "REPAIRING", "REPAIRED", "DELIVERING", "COMPLETED"
+            ],
+            statusDisplay: {
+                "PENDING_REPAIR": "คำขอส่งซ่อม",
+                "PICKING_UP": "กำลังไปรับเครื่อง",
+                "RECEIVED": "รับเครื่องแล้ว",
+                "AT_SHOP": "เครื่องถึงร้าน",
+                "WAITING_CHECK": "รอเช็คปัญหา",
+                "DIAGNOSING": "ตรวจเช็คปัญหา",
+                "QUOTED": "ส่งใบเสนอราคา",
+                "PAID": "จ่ายเงินแล้ว",
+                "REPAIRING": "กำลังซ่อม",
+                "REPAIRED": "ซ่อมเสร็จ",
+                "DELIVERING": "กำลังส่งเครื่องกลับ",
+                "COMPLETED": "ลูกค้ารับเครื่องแล้ว"
+            },
+
+            get headers() {
+                const h = { 'ngrok-skip-browser-warning': 'true' };
+                if (this.token) h['Authorization'] = `Bearer ${this.token}`;
+                return h;
+            },
+
+            async init() {
+                if (this.token) {
+                    await this.fetchProfile();
+                    await this.refreshCurrentView();
+                    
+                    // Auto-select from URL query string
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const qid = urlParams.get('id');
+                    if (qid && this.jobs.length > 0) {
+                        const job = this.jobs.find(j => j.queueId === qid);
+                        if (job) this.selectJob(job);
+                    } else if (this.jobs.length > 0 && this.view === 'mywork') {
+                        this.selectJob(this.jobs[0]);
+                    }
+                }
+                this.initialized = true;
+            },
+
+            async refreshCurrentView() {
+                if (this.view === 'mywork') await this.fetchJobs();
+                if (this.view === 'queue-all') {
+                    await this.fetchAllRepairs();
+                    await this.fetchAllTechnicians();
+                }
+                if (this.view === 'overview') await this.fetchStats();
+                if (this.view === 'tech-manage') await this.fetchAllTechnicians();
+            },
+
+            async fetchProfile() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/me`, { headers: this.headers });
+                    if (res.ok) this.user = await res.json();
+                    else if (res.status === 401) this.logout(true);
+                } catch (e) { console.error(e); }
+            },
+
+            async fetchJobs() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repairs`, { headers: this.headers });
+                    if (res.ok) {
+                        this.jobs = await res.json();
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            async fetchAllRepairs() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, { headers: this.headers });
+                    if (res.ok) this.allRepairs = await res.json();
+                } catch (e) { console.error(e); }
+            },
+
+            async fetchAllTechnicians() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/all`, { headers: this.headers });
+                    if (res.ok) this.allTechnicians = await res.json();
+                } catch (e) { console.error(e); }
+            },
+
+            async fetchStats() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, { headers: this.headers });
+                    if (res.ok) {
+                        const all = await res.json();
+                        this.stats.total = all.length;
+                        this.stats.pending = all.filter(r => r.status === 'PENDING_REPAIR').length;
+                        this.stats.repairing = all.filter(r => r.status === 'REPAIRING').length;
+                        this.stats.complete = all.filter(r => r.status === 'COMPLETED').length;
+                    }
+                } catch (e) { console.error(e); }
+            },
+
+            async fetchMedia() {
+                if (!this.selectedRepair) return;
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/${this.selectedRepair.id}/media`, { headers: this.headers });
+                    if (res.ok) this.media = await res.json();
+                } catch (e) { console.error(e); }
+            },
+
+            async uploadMedia(file, section) {
+                const formData = new FormData();
+                formData.append('repair_id', this.selectedRepair.id);
+                formData.append('section', section);
+                formData.append('file', file);
+
+                Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.token}`, 'ngrok-skip-browser-warning': 'true' },
+                        body: formData
+                    });
+                    if (res.ok) {
+                        await this.fetchMedia();
+                        await Swal.fire({ title: 'สำเร็จ!', text: 'อัปโหลดไฟล์เรียบร้อยแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
+                    } else {
+                        const err = await res.json();
+                        throw new Error(err.detail || 'อัปโหลดไม่สำเร็จ');
+                    }
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
+            switchView(newView) {
+                this.view = newView;
+                this.search = ''; 
+                const url = new URL(window.location.href);
+                if (newView !== 'mywork') url.searchParams.delete('id');
+                history.pushState(null, '', `/tech/${newView}${url.search}`);
+                this.refreshCurrentView();
+            },
+
+            get filteredJobs() {
+                const list = (this.view === 'queue-all') ? this.allRepairs : this.jobs;
+                return list.filter(r => {
+                    const sMatch = !this.search || 
+                        r.queueId.toLowerCase().includes(this.search.toLowerCase()) ||
+                        (r.fullName && r.fullName.toLowerCase().includes(this.search.toLowerCase())) ||
+                        (r.deviceType && r.deviceType.toLowerCase().includes(this.search.toLowerCase()));
+                    const stMatch = this.filterStatus === 'all' || r.status === this.filterStatus;
+                    return sMatch && stMatch;
+                });
+            },
+
+            get totalPages() { return Math.ceil(this.filteredJobs.length / this.perPage) || 1; },
+            get paginatedJobs() { return this.filteredJobs.slice((this.page - 1) * this.perPage, this.page * this.perPage); },
+
+            selectJob(job) { 
+                this.selectedRepair = job; 
+                this.media = [];
+                const url = new URL(window.location.href);
+                url.searchParams.set('id', job.queueId);
+                history.replaceState(null, '', url.pathname + url.search);
+            },
+
+            async updateStatus(newStatus) {
+                if (!this.selectedRepair) return;
+                const result = await Swal.fire({
+                    title: 'ยืนยันการเปลี่ยนสถานะ?',
+                    text: `อัปเดตเป็น "${this.statusDisplay[newStatus]}"`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#001f3f',
+                    showLoaderOnConfirm: true,
+                    preConfirm: async () => {
+                        try {
+                            const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/update?queue_id=${this.selectedRepair.queueId}&status_name=${newStatus}`, {
+                                method: 'PUT',
+                                headers: this.headers
+                            });
+                            if (!res.ok) throw new Error('อัปเดตไม่สำเร็จ');
+                            return true;
+                        } catch (error) { Swal.showValidationMessage(`ผิดพลาด: ${error.message}`); }
+                    }
+                });
+
+                if (result.isConfirmed) {
+                    await Swal.fire({ title: 'สำเร็จ!', icon: 'success', timer: 1000, showConfirmButton: false });
+                    await this.fetchJobs();
+                    this.selectedRepair = this.jobs.find(j => j.queueId === this.selectedRepair.queueId);
+                    this.modalOpen = false;
+                }
+            },
+
+            async submitQuotation(data) {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/quotation/create`, {
+                        method: 'POST',
+                        headers: { ...this.headers, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        await Swal.fire('สำเร็จ', 'ส่งใบเสนอราคาแล้ว', 'success');
+                        await this.updateStatus('QUOTED');
+                    } else {
+                        const err = await res.json();
+                        Swal.fire('ผิดพลาด', err.detail || 'ส่งไม่สำเร็จ', 'error');
+                    }
+                } catch (e) { Swal.fire('ผิดพลาด', 'การเชื่อมต่อขัดข้อง', 'error'); }
+            },
+
+            async openModal(type) {
+                if (!this.selectedRepair) return;
+                this.modalType = type;
+                this.modalOpen = true;
+                if (type === 'media') await this.fetchMedia();
+            },
+
+            async registerNewTech(formData) {
+                const confirm = await Swal.fire({
+                    title: 'ยืนยันการเพิ่มช่าง?',
+                    text: `คุณกำลังจะเพิ่ม "${formData.displayName}" เข้าสู่ระบบ`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#001f3f'
+                });
+
+                if (!confirm.isConfirmed) return;
+
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/register`, {
+                        method: 'POST',
+                        headers: { 
+                            ...this.headers,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (res.ok) {
+                        await Swal.fire('สำเร็จ!', 'ลงทะเบียนช่างคนใหม่เรียบร้อยแล้ว', 'success');
+                        await this.fetchAllTechnicians();
+                        // Reset the local form in view_tech_manage if needed (handled by view-local state usually)
+                        location.reload(); // Quickest way to sync all states
+                    } else {
+                        const err = await res.json();
+                        throw new Error(err.detail || 'ไม่สามารถลงทะเบียนได้');
+                    }
+                } catch (e) {
+                    Swal.fire('ผิดพลาด', e.message, 'error');
+                }
+            },
+
+            logout(expired = false) {
+                localStorage.removeItem('tech_token');
+                this.token = null;
+                if (expired) {
+                    Swal.fire('Session Expired', 'กรุณา Login ใหม่', 'warning').then(() => {
+                        window.location.href = '/tech';
+                    });
+                } else {
+                    window.location.href = '/tech';
+                }
+            },
+
+            async login(username, password) {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/login`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'ngrok-skip-browser-warning': 'true' },
+                        body: formData
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        localStorage.setItem('tech_token', data.access_token);
+                        this.token = data.access_token;
+                        await this.init();
+                        this.switchView('mywork');
+                    } else { throw new Error(data.detail || 'Login failed'); }
+                } catch (e) { Swal.fire('เข้าสู่ระบบไม่สำเร็จ', e.message, 'error'); }
+            }
+        }
+    }
+</script>

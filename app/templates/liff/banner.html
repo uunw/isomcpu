@@ -1,0 +1,10 @@
+<div class="welcome-banner p-0">  
+    <div class="user-info-box">
+        <img :src="profile.pictureUrl || 'https://placehold.co/100x100?text=Profile'" alt="Profile" class="profile-pic">
+        <div class="welcome-text">
+            <h2>ยินดีต้อนรับ</h2>
+            <h3 x-text="profile.displayName || 'ลูกค้า'">ลูกค้า</h3>
+        </div>
+    </div>
+    <div class="welcome-instruction pe-3" x-text="viewTitle"></div>
+</div>

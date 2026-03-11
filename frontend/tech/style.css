@@ -1,0 +1,245 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Sarabun', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+/* ===== Background ===== */
+.background {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #001a3a 0%, #002d6b 35%, #0055bb 65%, #0077dd 85%, #1a90e8 100%);
+    overflow: hidden;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.5;
+}
+.blob-1 {
+    width: 550px; height: 550px;
+    background: radial-gradient(ellipse, rgba(80, 180, 255, 0.5) 0%, transparent 70%);
+    bottom: -150px; left: -100px;
+}
+.blob-2 {
+    width: 600px; height: 500px;
+    background: radial-gradient(ellipse, rgba(0, 120, 220, 0.4) 0%, transparent 70%);
+    top: -150px; right: -120px;
+}
+.blob-3 {
+    width: 350px; height: 350px;
+    background: radial-gradient(ellipse, rgba(140, 210, 255, 0.35) 0%, transparent 70%);
+    bottom: 30%; right: 5%;
+}
+
+.wave-svg {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 55%;
+    height: auto;
+    opacity: 0.85;
+}
+
+.deco-right {
+    position: absolute;
+    top: 0; right: 0;
+    width: 45%;
+    height: 100%;
+    opacity: 0.7;
+}
+
+/* ===== Layout ===== */
+.container {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 20px;
+}
+
+/* ===== Header Text ===== */
+.header-text {
+    text-align: center;
+    color: white;
+    margin-bottom: 28px;
+}
+.header-text h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    margin-bottom: 10px;
+}
+.header-text p {
+    font-size: 1.15rem;
+    font-weight: 400;
+    opacity: 0.92;
+}
+
+/* ===== Login Card ===== */
+.login-card {
+    background: white;
+    border-radius: 22px;
+    padding: 48px 58px 44px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+    width: 100%;
+    max-width: 490px;
+}
+
+/* ===== Logo Section ===== */
+.logo-section {
+    text-align: center;
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1.5px solid #e5e8ec;
+}
+
+.logo-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* CPU icon */
+.cpu-wrap {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+.cpu-body {
+    position: absolute;
+    top: 8px; left: 8px;
+    width: 32px; height: 32px;
+    border: 3px solid #001f3f;
+    border-radius: 6px;
+    background: white;
+}
+.cpu-body::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px; height: 16px;
+    background: #001f3f;
+    border-radius: 3px;
+}
+
+.pin {
+    position: absolute;
+    background: #001f3f;
+}
+.pin.v { width: 2.5px; height: 7px; }
+.pin.h { width: 7px;   height: 2.5px; }
+
+/* top */
+.pin.t1 { top: 2px; left: 13px; }
+.pin.t2 { top: 2px; left: 21px; }
+.pin.t3 { top: 2px; left: 29px; }
+/* bottom */
+.pin.b1 { bottom: 2px; left: 13px; }
+.pin.b2 { bottom: 2px; left: 21px; }
+.pin.b3 { bottom: 2px; left: 29px; }
+/* left */
+.pin.l1 { top: 13px; left: 2px; }
+.pin.l2 { top: 21px; left: 2px; }
+.pin.l3 { top: 29px; left: 2px; }
+/* right */
+.pin.r1 { top: 13px; right: 2px; }
+.pin.r2 { top: 21px; right: 2px; }
+.pin.r3 { top: 29px; right: 2px; }
+
+.logo-name {
+    font-size: 1.85rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #001f3f 0%, #0066cc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.5px;
+}
+
+/* ===== Form ===== */
+.form-group {
+    margin-bottom: 22px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+    font-size: 0.97rem;
+}
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.input-icon {
+    position: absolute;
+    left: 14px;
+    font-size: 1.2rem;
+    color: #555;
+    pointer-events: none;
+}
+.form-group input {
+    width: 100%;
+    padding: 14px 14px 14px 48px;
+    border: 1.8px solid #dde2ea;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-family: 'Sarabun', sans-serif;
+    background: #f7f9fc;
+    transition: border-color 0.25s, background 0.25s;
+    color: #222;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #0066cc;
+    background: white;
+}
+
+/* ===== Login Button ===== */
+.login-button {
+    width: 100%;
+    padding: 14px;
+    background: #001f3f;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    transition: background 0.25s, transform 0.15s, box-shadow 0.25s;
+    margin-top: 28px;
+    letter-spacing: 0.5px;
+}
+.login-button:hover {
+    background: #003570;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 31, 63, 0.3);
+}
+.login-button:active {
+    transform: translateY(0);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+    .header-text h1 { font-size: 2.2rem; }
+    .login-card { padding: 36px 26px 32px; }
+}

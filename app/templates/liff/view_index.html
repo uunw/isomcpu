@@ -1,0 +1,100 @@
+<template x-if="currentView === 'index'">
+    <div class="form-container">
+        <form @submit.prevent="openConfirmModal">
+            <div class="mb-4">
+                <label class="form-label">ชื่อ-นามสกุล :</label>
+                <div class="input-group">
+                    <span class="input-group-text"><div class="icon-circle"><i class="fa-solid fa-user"></i></div></span>
+                    <input type="text" x-model="formData.fullName" class="form-control" placeholder="กรุณากรอกชื่อ-นามสกุล" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">เบอร์โทรศัพท์ :</label>
+                <div class="input-group">
+                    <span class="input-group-text"><div class="icon-circle"><i class="fa-solid fa-phone"></i></div></span>
+                    <input type="tel" x-model="formData.phoneNumber" class="form-control" placeholder="กรุณากรอกเบอร์โทรศัพท์ 10 หลัก" required>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">ที่อยู่รับเครื่อง :</label>
+                <div class="input-group mb-3">
+                    <span class="input-group-text"><div class="icon-circle"><i class="fa-solid fa-location-dot"></i></div></span>
+                    <input type="text" x-model="formData.addressMain" class="form-control" placeholder="บ้านเลขที่ / หมู่ / ซอย / ถนน" required>
+                </div>
+                
+                <div class="row g-2 mb-2 address-grid">
+                    <div class="col-6">
+                        <input x-model="formData.subDistrict" class="form-control" type="text" placeholder="ตำบล/แขวง" required>
+                    </div>
+                    <div class="col-6">
+                        <input x-model="formData.district" class="form-control" type="text" placeholder="อำเภอ/เขต" required>
+                    </div>
+                </div>
+                <div class="row g-2 address-grid">
+                    <div class="col-6">
+                        <input x-model="formData.province" class="form-control" type="text" placeholder="จังหวัด" required>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" x-model="formData.zipCode" class="form-control" placeholder="รหัสไปรษณีย์" required>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="text-muted my-4">
+
+            <div class="row mb-3 align-items-center">
+                <div class="col-4 text-end"><label class="form-label">ประเภท :</label></div>
+                <div class="col-8">
+                    <div class="input-group no-icon" style="border-radius: 20px;">
+                        <select x-model="formData.deviceType" class="form-select text-center" required>
+                            <option value="" selected disabled>กรุณาเลือกประเภท</option>
+                            <option value="PC Desktop">PC Desktop</option>
+                            <option value="Notebook/Laptop">Notebook/Laptop</option>
+                            <option value="Smartphone">Smartphone</option>
+                            <option value="Other">อื่นๆ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3 align-items-center">
+                <div class="col-4 text-end"><label class="form-label">ปัญหา :</label></div>
+                <div class="col-8">
+                    <div class="input-group no-icon" style="border-radius: 20px;">
+                        <input type="text" x-model="formData.problemType" class="form-control text-center" placeholder="เปิดเครื่องไม่ติด/ เครื่องช้า" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-4 text-end pt-2"><label class="form-label">รายละเอียด :</label></div>
+                <div class="col-8">
+                    <div class="input-group no-icon" style="border-radius: 20px;">
+                        <textarea x-model="formData.problemDetail" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="text-muted my-4">
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label d-block text-center">วันนัดรับเครื่อง :</label>
+                    <div class="input-group no-icon" style="border-radius: 20px;">
+                        <input type="date" x-model="formData.pickupDate" class="form-control text-center" required>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label d-block text-center">ช่วงเวลา :</label>
+                    <div class="input-group no-icon" style="border-radius: 20px;">
+                        <input type="time" x-model="formData.pickupTime" class="form-control text-center" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn mt-5">ส่งข้อมูลการซ่อม</button>
+        </form>
+    </div>
+</template>

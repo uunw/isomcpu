@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.git
+.gitignore
+.vscode
+# README.md is needed by hatchling
+# README.md
+docs/
+API_DOCS.md
+GEMINI.md
+Dockerfile
+.dockerignore
+requirements.txt
+ngrok.exe
+read_CHAN_T.txt
+routeDetail_endpoints.txt
+uploads/

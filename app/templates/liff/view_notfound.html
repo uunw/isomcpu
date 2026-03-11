@@ -1,0 +1,30 @@
+<template x-if="currentView === 'notfound'">
+    <div class="form-container d-flex flex-column align-items-center justify-content-center flex-grow-1" style="padding: 40px 30px;">
+        <div class="text-center mb-5">
+            <div class="icon-circle mx-auto mb-4" style="width: 120px; height: 120px; background-color: #fff1f0; border: 2px solid #ffa39e;">
+                <i class="fa fa-exclamation-triangle" style="font-size: 50px; color: #ff4d4f;"></i>
+            </div>
+            <h3 class="fw-bold text-dark mb-3">ยังไม่พบคิวงานซ่อม</h3>
+            <p class="text-muted px-2" style="font-size: 15px; line-height: 1.6;">
+                ขณะนี้ระบบยังไม่พบข้อมูลการซ่อมที่ผูกกับบัญชี LINE ของคุณ โปรดตรวจสอบสถานะอีกครั้งภายหลัง หรือติดต่อเจ้าหน้าที่
+            </p>
+        </div>
+
+        <div class="w-100 mt-2">
+            <button @click="window.location.replace('/')" class="submit-btn text-center text-decoration-none d-block mb-3 py-3 w-100 border-0">
+                <i class="fa-solid fa-plus me-2"></i> เริ่มแจ้งซ่อมใหม่
+            </button>
+            
+            <button @click="liff.closeWindow()" class="btn btn-outline-secondary w-100 rounded-pill py-3 fw-bold border-2" style="font-size: 18px;">
+                <i class="fa-solid fa-xmark me-2"></i> ปิดหน้านี้
+            </button>
+        </div>
+        
+        <div class="mt-5 text-center">
+            <h5 class="fw-bold text-secondary mb-2">ต้องการความช่วยเหลือ?</h5>
+            <a href="https://line.me/ti/p/@isomcom" class="text-primary fw-bold text-decoration-none d-block" style="font-size: 18px;">
+                <i class="fa-brands fa-line me-1" style="font-size: 22px;"></i> ติดต่อเจ้าหน้าที่ผ่าน LINE
+            </a>
+        </div>
+    </div>
+</template>

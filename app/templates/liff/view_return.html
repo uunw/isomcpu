@@ -1,0 +1,46 @@
+<template x-if="currentView === 'return'">
+    <div class="form-container">
+        <form @submit.prevent="openReturnConfirm">
+            <div class="mb-4">
+                <label class="form-label">ชื่อ-นามสกุล :</label>
+                <div class="input-group">
+                    <span class="input-group-text"><div class="icon-circle"><i class="fa-solid fa-user"></i></div></span>
+                    <input type="text" x-model="returnForm.fullName" class="form-control" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">เบอร์โทรศัพท์ :</label>
+                <div class="input-group">
+                    <span class="input-group-text"><div class="icon-circle"><i class="fa-solid fa-phone"></i></div></span>
+                    <input type="tel" x-model="returnForm.phoneNumber" class="form-control" required>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="form-label">ที่อยู่รับเครื่องคืน :</label>
+                <div class="input-group">
+                    <span class="input-group-text"><div class="icon-circle align-self-start mt-2"><i class="fa-solid fa-location-dot"></i></div></span>
+                    <textarea x-model="returnForm.address" class="form-control" rows="3" required></textarea>
+                </div>
+            </div>
+            
+            <hr class="my-4">
+            
+            <div class="row g-3">
+                <div class="col-6">
+                    <label class="form-label d-block text-center">นัดรับวันที่ :</label>
+                    <div class="input-group no-icon">
+                        <input type="date" x-model="returnForm.date" class="form-control text-center" required>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="form-label d-block text-center">ช่วงเวลา :</label>
+                    <div class="input-group no-icon">
+                        <input type="time" x-model="returnForm.time" class="form-control text-center" required>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn mt-5">ยืนยันข้อมูลรับเครื่องคืน</button>
+        </form>
+    </div>
+</template>

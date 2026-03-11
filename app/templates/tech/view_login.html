@@ -1,0 +1,49 @@
+<div class="login-page" style="width: 100vw; height: 100vh;">
+    <div class="background">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="container" x-data="{ username: '', password: '' }">
+        <div class="header-text">
+            <h1>Hello, Welcome back</h1>
+            <p>เข้าสู่ระบบเพื่อดู"คิวงานซ่อมของคุณ"</p>
+        </div>
+
+        <div class="login-card">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <div class="cpu-wrap">
+                        <div class="cpu-body"></div>
+                        <div class="pin v t1"></div><div class="pin v t2"></div><div class="pin v t3"></div>
+                        <div class="pin v b1"></div><div class="pin v b2"></div><div class="pin v b3"></div>
+                        <div class="pin h l1"></div><div class="pin h l2"></div><div class="pin h l3"></div>
+                        <div class="pin h r1"></div><div class="pin h r2"></div><div class="pin h r3"></div>
+                    </div>
+                    <span class="logo-name">I SOM <span>CPU</span></span>
+                </div>
+            </div>
+
+            <form @submit.prevent="login(username, password)">
+                <div class="form-group">
+                    <label>ผู้ใช้งาน :</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" x-model="username" placeholder="อีเมลของคุณ" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>รหัสผ่าน :</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" x-model="password" placeholder="••••••••" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button">เข้าสู่ระบบ</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,34 @@
+<template x-if="currentView === 'queue'">
+    <div class="form-container">
+        <div class="row g-3">
+            <div class="col-6">
+                <div class="queue-summary-box1">
+                    <h6 class="waitqueue">คิวรอตรวจเช็ค :</h6>
+                    <hr class="line">
+                    <div class="d-flex justify-content-center align-items-baseline mt-2" style="margin-left: 0;">
+                        <div class="queue-summary-number text-diagnosis mb-0" x-text="stats.pending">0</div>
+                        <span class="wait ms-2">คิว</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="queue-summary-box2">
+                    <h6 class="waitqueue">คิวรอซ่อม :</h6>
+                    <hr class="line">
+                    <div class="d-flex justify-content-center align-items-baseline mt-2" style="margin-left: 0;">
+                        <div class="queue-summary-number text-repair mb-0" x-text="stats.repairing">0</div>
+                        <span class="wait ms-2">คิว</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-5 text-center">
+            <p class="text-muted small">ข้อมูลอัปเดตล่าสุด: <span x-text="lastUpdate"></span></p>
+            <button class="btn btn-outline-primary rounded-pill px-4" @click="fetchStats">
+                <i class="fa-solid fa-rotate-right me-2"></i> รีเฟรชข้อมูล
+            </button>
+        </div>
+    </div>
+</template>
