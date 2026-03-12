@@ -6,6 +6,7 @@
             loadingText: 'กำลังเตรียมความพร้อม...',
             submitting: false,
             profile: {},
+            pollingTimer: null,
             
             // --- Index Form Data ---
             formData: {
@@ -41,7 +42,7 @@
                 "PENDING_REPAIR": 0, "PICKING_UP": 1, "RECEIVED": 2, "AT_SHOP": 3,
                 "WAITING_CHECK": 4, "DIAGNOSING": 5, "QUOTED": 6, "PAID": 7,
                 "REPAIRING": 8, "REPAIRED": 9, "DELIVERING": 10, "COMPLETED": 11,
-                "CANCELLED": 99 // ใช้ค่าพิเศษสำหรับสถานะยกเลิก
+                "CANCELLED": 99 
             },
 
             getStatusDescription(stage) {
@@ -53,6 +54,7 @@
                     "QUOTED": "ระบบได้ส่งใบเสนอราคาให้คุณแล้ว โปรดตรวจสอบและยืนยัน",
                     "PAID": "ได้รับยอดชำระเรียบร้อยแล้ว ช่างจะเริ่มดำเนินการทันที",
                     "REPAIRED": "ดำเนินการซ่อมแซมเสร็จเรียบร้อยแล้ว",
+                    "DELIVERING": "ช่างกำลังนำเครื่องส่งคืนให้คุณ เมื่อได้รับแล้วโปรดกดยืนยันด้านล่างครับ",
                     "CANCELLED": "คุณได้ทำการยกเลิกรายการซ่อมนี้แล้ว"
                 };
                 return descriptions[stage] || "กำลังดำเนินการในขั้นตอนถัดไป";
@@ -60,12 +62,10 @@
 
             get currentStageIndex() {
                 if (!this.repairData.status) return 0;
-                // ถ้าเป็น CANCELLED ให้คืนค่าที่ทำให้ Timeline ดูเป็นสีเทาทั้งหมด หรือจัดการพิเศษใน HTML
                 return this.statusMap[this.repairData.status] ?? 0;
             },
 
-            // ... (โค้ดส่วนอื่นคงเดิม) ...
-            stats: { pending: 3, repairing: 0 },
+            stats: { pending: 0, repairing: 0 },
             lastUpdate: '',
             returnForm: { fullName: '', phoneNumber: '', address: '', date: '', time: '' },
 
@@ -92,6 +92,8 @@
                         this.formData.fullName = this.profile.displayName;
                     } else if (this.currentView === 'track') {
                         await this.fetchTrackData();
+                        await this.fetchStats();
+                        this.startPolling();
                     } else if (this.currentView === 'queue') {
                         await this.fetchStats();
                     } else if (this.currentView === 'return') {
@@ -105,18 +107,43 @@
                 }
             },
 
-            async fetchTrackData() {
-                const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/track?line_user_id=${this.profile.userId}`, {
-                    headers: { 'ngrok-skip-browser-warning': 'true' }
-                });
-                if (res.status === 404) {
-                    window.location.href = "/notfound-track";
-                } else {
-                    this.repairData = await res.json();
-                    if (['QUOTED', 'PAID', 'REPAIRING', 'REPAIRED', 'DELIVERING', 'COMPLETED'].includes(this.repairData.status)) {
-                        await this.fetchQuotation();
+            startPolling() {
+                if (this.pollingTimer) return;
+                this.pollingTimer = setInterval(async () => {
+                    if (this.currentView === 'track') {
+                        await this.fetchTrackData();
+                    } else {
+                        this.stopPolling();
                     }
+                }, 3000);
+            },
+
+            stopPolling() {
+                if (this.pollingTimer) {
+                    clearInterval(this.pollingTimer);
+                    this.pollingTimer = null;
                 }
+            },
+
+            async fetchTrackData() {
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/track?line_user_id=${this.profile.userId}`, {
+                        headers: { 'ngrok-skip-browser-warning': 'true' }
+                    });
+                    if (res.status === 404) {
+                        this.stopPolling();
+                        window.location.href = "/notfound-track";
+                    } else {
+                        const newData = await res.json();
+                        // อัปเดตเฉพาะเมื่อข้อมูลเปลี่ยน
+                        if (JSON.stringify(this.repairData) !== JSON.stringify(newData)) {
+                            this.repairData = newData;
+                            if (['QUOTED', 'PAID', 'REPAIRING', 'REPAIRED', 'DELIVERING', 'COMPLETED'].includes(this.repairData.status)) {
+                                await this.fetchQuotation();
+                            }
+                        }
+                    }
+                } catch (e) { console.error('Fetch error:', e); }
             },
 
             async fetchQuotation() {
@@ -198,6 +225,32 @@
                     });
                     if (res.ok) { alert("จำลองการชำระเงินสำเร็จ!"); location.reload(); }
                 } catch (e) { alert("เกิดข้อผิดพลาด"); }
+            },
+
+            async confirmReceipt() {
+                const result = await Swal.fire({
+                    title: 'ยืนยันการรับเครื่อง?',
+                    text: 'คุณได้รับเครื่องซ่อมคืนเรียบร้อยแล้วใช่หรือไม่?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#27ae60',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'ใช่, ฉันได้รับแล้ว',
+                    cancelButtonText: 'ยกเลิก'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/update-status-customer?queue_id=${this.repairData.queueId}&new_status=COMPLETED`, {
+                            method: 'PUT',
+                            headers: { 'ngrok-skip-browser-warning': 'true' }
+                        });
+                        if (res.ok) {
+                            await Swal.fire('สำเร็จ!', 'ขอบคุณที่ใช้บริการครับ หวังว่าคุณจะพึงพอใจกับงานซ่อมของเรา', 'success');
+                            location.reload();
+                        } else throw new Error('อัปเดตสถานะไม่สำเร็จ');
+                    } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+                }
             },
 
             getFullAddress() {

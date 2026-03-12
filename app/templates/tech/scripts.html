@@ -7,9 +7,9 @@
             initialized: false,
             
             // --- Global Data ---
-            jobs: [], // My Work jobs
-            allRepairs: [], // All jobs in shop
-            allTechnicians: [], // All techs in system
+            jobs: [], 
+            allRepairs: [], 
+            allTechnicians: [], 
             dashboardSummary: {
                 global: { total: 0, todo: 0, waiting: 0, done: 0 },
                 personal: { total: 0, todo: 0, waiting: 0, done: 0 },
@@ -19,12 +19,14 @@
             // --- Filter & UI State ---
             search: '',
             filterStatus: 'all',
+            filterTech: 'all',
             page: 1,
             perPage: 5,
             selectedRepair: null,
             media: [], 
             modalOpen: false,
             modalType: '',
+            repairChart: null,
 
             statusSequence: [
                 "PENDING_REPAIR", "PICKING_UP", "RECEIVED", "AT_SHOP",
@@ -54,14 +56,28 @@
                 return h;
             },
 
+            // --- Computed ---
+            get filteredJobs() {
+                const list = (this.view === 'queue-all') ? this.allRepairs : this.jobs;
+                return list.filter(r => {
+                    const sMatch = !this.search || 
+                        r.queueId.toLowerCase().includes(this.search.toLowerCase()) ||
+                        (r.fullName && r.fullName.toLowerCase().includes(this.search.toLowerCase())) ||
+                        (r.deviceType && r.deviceType.toLowerCase().includes(this.search.toLowerCase()));
+                    const stMatch = this.filterStatus === 'all' || r.status === this.filterStatus;
+                    const techMatch = this.filterTech === 'all' || r.technicianID == this.filterTech;
+                    return sMatch && stMatch && techMatch;
+                });
+            },
+            get totalPages() { return Math.ceil(this.filteredJobs.length / this.perPage) || 1; },
+            get paginatedJobs() { return this.filteredJobs.slice((this.page - 1) * this.perPage, this.page * this.perPage); },
+
+            // --- Lifecycle & Routing ---
             async init() {
                 if (this.token) {
                     await this.fetchProfile();
                     await this.handleRouting(); 
-                    
-                    window.onpopstate = async () => {
-                        await this.handleRouting();
-                    };
+                    window.onpopstate = async () => { await this.handleRouting(); };
                 }
                 this.initialized = true;
             },
@@ -69,24 +85,30 @@
             async handleRouting() {
                 const pathParts = window.location.pathname.split('/');
                 const viewFromUrl = pathParts[pathParts.length - 1];
-                const validViews = ["mywork", "overview", "queue-all", "tech-manage"];
-                
-                if (validViews.includes(viewFromUrl)) {
-                    this.view = viewFromUrl;
-                } else {
-                    this.view = 'mywork';
-                }
-
+                const validViews = ["mywork", "overview", "queue-all", "tech-manage", "profile"];
+                this.view = validViews.includes(viewFromUrl) ? viewFromUrl : 'mywork';
                 await this.refreshCurrentView();
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const qid = urlParams.get('id');
-                if (qid && this.jobs.length > 0) {
-                    const job = this.jobs.find(j => j.queueId === qid);
-                    if (job) this.selectJob(job);
+                if (qid) {
+                    const list = (this.view === 'queue-all') ? this.allRepairs : this.jobs;
+                    const job = list.find(j => j.queueId === qid);
+                    if (job) this.selectedRepair = job;
                 } else if (this.jobs.length > 0 && this.view === 'mywork') {
                     this.selectJob(this.jobs[0]);
                 }
+            },
+
+            switchView(newView) {
+                this.view = newView;
+                this.search = ''; 
+                this.filterStatus = 'all';
+                this.filterTech = 'all';
+                const url = new URL(window.location.href);
+                if (newView !== 'mywork') url.searchParams.delete('id');
+                history.pushState(null, '', `/tech/${newView}${url.search}`);
+                this.refreshCurrentView();
             },
 
             async refreshCurrentView() {
@@ -97,8 +119,10 @@
                 }
                 if (this.view === 'overview') await this.fetchDashboardSummary();
                 if (this.view === 'tech-manage') await this.fetchAllTechnicians();
+                if (this.view === 'profile') await this.fetchProfile();
             },
 
+            // --- Data Fetching ---
             async fetchProfile() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/me`, { headers: this.headers });
@@ -106,43 +130,35 @@
                     else if (res.status === 401) this.logout(true);
                 } catch (e) { console.error(e); }
             },
-
             async fetchJobs() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repairs`, { headers: this.headers });
-                    if (res.ok) {
-                        this.jobs = await res.json();
-                    }
+                    if (res.ok) this.jobs = await res.json();
                 } catch (e) { console.error(e); }
             },
-
             async fetchAllRepairs() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/repairs/all`, { headers: this.headers });
-                    if (res.ok) {
-                        this.allRepairs = await res.json();
-                    }
+                    if (res.ok) this.allRepairs = await res.json();
                 } catch (e) { console.error(e); }
             },
-
             async fetchAllTechnicians() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/all`, { headers: this.headers });
-                    if (res.ok) {
-                        this.allTechnicians = await res.json();
-                    }
+                    if (res.ok) this.allTechnicians = await res.json();
                 } catch (e) { console.error(e); }
             },
-
             async fetchDashboardSummary() {
                 try {
                     const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/dashboard/summary`, { headers: this.headers });
                     if (res.ok) {
                         this.dashboardSummary = await res.json();
+                        if (this.view === 'overview') {
+                            this.$nextTick(() => this.initChart());
+                        }
                     }
                 } catch (e) { console.error(e); }
             },
-
             async fetchMedia() {
                 if (!this.selectedRepair) return;
                 try {
@@ -151,54 +167,69 @@
                 } catch (e) { console.error(e); }
             },
 
-            async uploadMedia(file, section) {
-                const formData = new FormData();
-                formData.append('repair_id', this.selectedRepair.id);
-                formData.append('section', section);
-                formData.append('file', file);
+            // --- Chart Logic ---
+            initChart() {
+                this.$nextTick(() => {
+                    const ctx = document.getElementById('repairChart');
+                    if (!ctx) return;
+                    if (this.repairChart) this.repairChart.destroy();
 
-                Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-                try {
-                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/upload`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${this.token}`, 'ngrok-skip-browser-warning': 'true' },
-                        body: formData
-                    });
-                    if (res.ok) {
-                        await this.fetchMedia();
-                        await Swal.fire({ title: 'สำเร็จ!', text: 'อัปโหลดไฟล์เรียบร้อยแล้ว', icon: 'success', timer: 1500, showConfirmButton: false });
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.detail || 'อัปโหลดไม่สำเร็จ');
+                    const labels = [];
+                    for(let i=6; i>=0; i--) {
+                        const d = new Date(); d.setDate(d.getDate() - i);
+                        labels.push(d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }));
                     }
-                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
-            },
 
-            switchView(newView) {
-                this.view = newView;
-                this.search = ''; 
-                const url = new URL(window.location.href);
-                if (newView !== 'mywork') url.searchParams.delete('id');
-                history.pushState(null, '', `/tech/${newView}${url.search}`);
-                this.refreshCurrentView();
-            },
-
-            get filteredJobs() {
-                const list = (this.view === 'queue-all') ? this.allRepairs : this.jobs;
-                return list.filter(r => {
-                    const sMatch = !this.search || 
-                        r.queueId.toLowerCase().includes(this.search.toLowerCase()) ||
-                        (r.fullName && r.fullName.toLowerCase().includes(this.search.toLowerCase())) ||
-                        (r.deviceType && r.deviceType.toLowerCase().includes(this.search.toLowerCase()));
-                    const stMatch = this.filterStatus === 'all' || r.status === this.filterStatus;
-                    return sMatch && stMatch;
+                    this.repairChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'จำนวนงานซ่อม',
+                                data: [5, 8, 12, 7, 10, 15, this.dashboardSummary.global.total],
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                borderWidth: 4,
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 6,
+                                pointBackgroundColor: '#fff',
+                                pointBorderColor: '#3b82f6',
+                                pointBorderWidth: 3,
+                                pointHoverRadius: 8
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { 
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#001f3f',
+                                    titleFont: { family: 'Sarabun' },
+                                    bodyFont: { family: 'Sarabun' },
+                                    padding: 12,
+                                    cornerRadius: 10,
+                                    displayColors: false
+                                }
+                            },
+                            scales: {
+                                y: { 
+                                    beginAtZero: true, 
+                                    grid: { color: '#f1f5f9', borderDash: [5, 5] },
+                                    ticks: { stepSize: 1, font: { family: 'Sarabun' } }
+                                },
+                                x: { 
+                                    grid: { display: false },
+                                    ticks: { font: { family: 'Sarabun' } }
+                                }
+                            }
+                        }
+                    });
                 });
             },
 
-            get totalPages() { return Math.ceil(this.filteredJobs.length / this.perPage) || 1; },
-            get paginatedJobs() { return this.filteredJobs.slice((this.page - 1) * this.perPage, this.page * this.perPage); },
-
+            // --- Actions ---
             selectJob(job) { 
                 this.selectedRepair = job; 
                 this.media = [];
@@ -230,10 +261,25 @@
 
                 if (result.isConfirmed) {
                     await Swal.fire({ title: 'สำเร็จ!', icon: 'success', timer: 1000, showConfirmButton: false });
-                    await this.fetchJobs();
-                    this.selectedRepair = this.jobs.find(j => j.queueId === this.selectedRepair.queueId);
+                    await this.refreshCurrentView();
+                    const list = (this.view === 'queue-all') ? this.allRepairs : this.jobs;
+                    this.selectedRepair = list.find(j => j.queueId === this.selectedRepair.queueId);
                     this.modalOpen = false;
                 }
+            },
+
+            async updateRepairDetails(date) {
+                if (!this.selectedRepair) return;
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/details?queue_id=${this.selectedRepair.queueId}&pickup_date=${date}`, {
+                        method: 'PUT',
+                        headers: this.headers
+                    });
+                    if (res.ok) {
+                        await this.refreshCurrentView();
+                        Swal.fire({ title: 'บันทึกแล้ว', icon: 'success', timer: 1000, showConfirmButton: false });
+                    }
+                } catch (e) { console.error(e); }
             },
 
             async assignTech(queueId, techId) {
@@ -247,10 +293,20 @@
                     if (res.ok) {
                         await Swal.fire('สำเร็จ', 'มอบหมายงานให้ช่างเรียบร้อยแล้ว', 'success');
                         await this.fetchAllRepairs();
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.detail || 'มอบหมายไม่สำเร็จ');
-                    }
+                    } else throw new Error('มอบหมายไม่สำเร็จ');
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
+            async sendNotification(msg) {
+                if (!this.selectedRepair || !msg) return;
+                Swal.fire({ title: 'กำลังส่งข้อความ...', didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/notify-customer?queue_id=${this.selectedRepair.queueId}&message=${encodeURIComponent(msg)}`, {
+                        method: 'POST',
+                        headers: this.headers
+                    });
+                    if (res.ok) Swal.fire('สำเร็จ', 'ส่งข้อความแจ้งเตือนลูกค้าแล้ว', 'success');
+                    else throw new Error('ส่งไม่สำเร็จ');
                 } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
             },
 
@@ -262,26 +318,35 @@
                         body: JSON.stringify(data)
                     });
                     if (res.ok) {
-                        await Swal.fire('สำเร็จ', 'ส่งใบเสนอราคาแล้ว', 'success');
+                        this.modalOpen = false;
                         await this.updateStatus('QUOTED');
-                    } else {
-                        const err = await res.json();
-                        Swal.fire('ผิดพลาด', err.detail || 'ส่งไม่สำเร็จ', 'error');
-                    }
-                } catch (e) { Swal.fire('ผิดพลาด', 'การเชื่อมต่อขัดข้อง', 'error'); }
+                    } else throw new Error('ส่งไม่สำเร็จ');
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
             },
 
-            async openModal(type) {
-                if (!this.selectedRepair) return;
-                this.modalType = type;
-                this.modalOpen = true;
-                if (type === 'media') await this.fetchMedia();
+            async uploadMedia(file, section) {
+                const formData = new FormData();
+                formData.append('repair_id', this.selectedRepair.id);
+                formData.append('section', section);
+                formData.append('file', file);
+                Swal.fire({ title: 'กำลังอัปโหลด...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/repair/upload`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${this.token}`, 'ngrok-skip-browser-warning': 'true' },
+                        body: formData
+                    });
+                    if (res.ok) {
+                        await this.fetchMedia();
+                        await Swal.fire({ title: 'สำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false });
+                    } else throw new Error('อัปโหลดไม่สำเร็จ');
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
             },
 
             async registerNewTech(formData) {
                 const confirm = await Swal.fire({
                     title: 'ยืนยันการเพิ่มช่าง?',
-                    text: `คุณกำลังจะเพิ่ม "${formData.displayName}" เข้าสู่ระบบ`,
+                    text: `คุณกำลังจะเพิ่ม "${formData.displayName}"`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#001f3f'
@@ -295,25 +360,55 @@
                         body: JSON.stringify(formData)
                     });
                     if (res.ok) {
-                        await Swal.fire('สำเร็จ!', 'ลงทะเบียนช่างคนใหม่เรียบร้อยแล้ว', 'success');
-                        location.reload();
-                    } else {
-                        const err = await res.json();
-                        throw new Error(err.detail || 'ไม่สามารถลงทะเบียนได้');
-                    }
+                        await Swal.fire('สำเร็จ!', 'ลงทะเบียนช่างเรียบร้อย', 'success');
+                        await this.fetchAllTechnicians();
+                    } else throw new Error('ลงทะเบียนไม่สำเร็จ');
                 } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
+            async updateProfile(formData) {
+                Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/me`, {
+                        method: 'PUT',
+                        headers: { ...this.headers, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    if (res.ok) {
+                        this.user = await res.json();
+                        await Swal.fire('สำเร็จ!', 'อัปเดตโปรไฟล์เรียบร้อย', 'success');
+                    } else throw new Error('อัปเดตไม่สำเร็จ');
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
+            async changePassword(formData) {
+                Swal.fire({ title: 'กำลังเปลี่ยนรหัสผ่าน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                try {
+                    const res = await fetch(`${window.CONFIG.API_BASE_URL}/tech/change-password`, {
+                        method: 'PUT',
+                        headers: { ...this.headers, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ oldPassword: formData.oldPassword, newPassword: formData.newPassword })
+                    });
+                    if (res.ok) {
+                        await Swal.fire('สำเร็จ!', 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว กรุณาเข้าสู่ระบบใหม่', 'success');
+                        this.logout();
+                    } else throw new Error('รหัสผ่านเดิมไม่ถูกต้อง');
+                } catch (e) { Swal.fire('ผิดพลาด', e.message, 'error'); }
+            },
+
+            async openModal(type) {
+                if (!this.selectedRepair) return;
+                this.modalType = type;
+                this.modalOpen = true;
+                if (type === 'media') await this.fetchMedia();
             },
 
             logout(expired = false) {
                 localStorage.removeItem('tech_token');
                 this.token = null;
                 if (expired) {
-                    Swal.fire('Session Expired', 'กรุณา Login ใหม่', 'warning').then(() => {
-                        window.location.href = '/tech';
-                    });
-                } else {
-                    window.location.href = '/tech';
-                }
+                    Swal.fire('Session Expired', 'กรุณา Login ใหม่', 'warning').then(() => { window.location.href = '/tech'; });
+                } else window.location.href = '/tech';
             },
 
             async login(username, password) {
@@ -333,7 +428,7 @@
                         await this.init();
                         this.switchView('mywork');
                         await Swal.fire({ title: 'เข้าสู่ระบบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false });
-                    } else { throw new Error(data.detail || 'Login failed'); }
+                    } else throw new Error(data.detail || 'Login failed');
                 } catch (e) { Swal.fire('เข้าสู่ระบบไม่สำเร็จ', e.message, 'error'); }
             }
         }

@@ -53,7 +53,7 @@
                     </div>
                     
                     <template x-if="selectedRepair.status !== 'CANCELLED'">
-                        <button class="add-job-btn">⚠️ แจ้งปัญหาให้ลูกค้า</button>
+                        <button class="add-job-btn" @click="openModal('notification')">⚠️ แจ้งปัญหาให้ลูกค้า</button>
                     </template>
                 </div>
                 
@@ -77,6 +77,17 @@
                                 @click="updateStatus('DELIVERING')">
                             <i class="fa-solid fa-truck-fast me-2"></i> ส่งเครื่องคืนเรียบร้อย
                         </button>
+                    </div>
+                </template>
+
+                <!-- Delivering (Waiting for Customer) Banner -->
+                <template x-if="selectedRepair.status === 'DELIVERING'">
+                    <div style="background: #f0fdf4; border: 2px solid #bbf7d0; border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+                        <div style="font-size: 2.5rem;">🚚</div>
+                        <div>
+                            <h3 style="color: #166534; margin: 0; font-weight: 800;">กำลังส่งเครื่องคืน</h3>
+                            <p style="color: #15803d; margin: 5px 0 0 0; font-size: 0.95rem;">ระบบกำลังรอให้ลูกค้ากดยืนยันการรับเครื่องผ่าน LINE ครับ</p>
+                        </div>
                     </div>
                 </template>
 
@@ -170,7 +181,7 @@
                                             'active': selectedRepair.status === status,
                                             'completed': statusSequence.indexOf(selectedRepair.status) > statusSequence.indexOf(status),
                                             'next': statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1,
-                                            'waiting-customer': status === 'PAID' && selectedRepair.status === 'QUOTED'
+                                            'waiting-customer': (status === 'PAID' && selectedRepair.status === 'QUOTED') || (status === 'COMPLETED' && selectedRepair.status === 'DELIVERING')
                                         }"
                                         @click="
                                             if (status === 'QUOTED') openModal('quotation');
@@ -178,9 +189,12 @@
                                                 if (selectedRepair.status === 'QUOTED') Swal.fire('รอดำเนินการ', 'ขั้นตอนนี้รอลูกค้าตรวจสอบใบเสนอราคาและชำระเงินผ่าน LINE', 'info');
                                                 else openModal('payment');
                                             }
+                                            else if (status === 'COMPLETED') {
+                                                Swal.fire('รอลูกค้ายืนยัน', 'ขั้นตอนนี้รอลูกค้ากดยืนยันการรับเครื่องผ่านหน้าติดตามสถานะใน LINE ครับ', 'info');
+                                            }
                                             else if(statusSequence.indexOf(selectedRepair.status) === statusSequence.indexOf(status) - 1) updateStatus(status)
                                         "
-                                        :disabled="statusSequence.indexOf(selectedRepair.status) !== statusSequence.indexOf(status) - 1 || (status === 'PAID' && selectedRepair.status === 'QUOTED')"
+                                        :disabled="statusSequence.indexOf(selectedRepair.status) !== statusSequence.indexOf(status) - 1 || (status === 'PAID' && selectedRepair.status === 'QUOTED') || (status === 'COMPLETED' && selectedRepair.status === 'DELIVERING')"
                                         x-text="statusDisplay[status]">
                                     </button>
                                 </template>
@@ -195,7 +209,11 @@
                             <div class="date-inputs">
                                 <div class="date-input-group"><input type="date" :value="selectedRepair.createdAt?.split('T')[0]" disabled style="width: 135px;"></div>
                                 <span class="date-separator">-</span>
-                                <div class="date-input-group"><input type="date" :value="selectedRepair.pickupDate || ''" style="width: 135px;"></div>
+                                <div class="date-input-group">
+                                    <input type="date" :value="selectedRepair.pickupDate || ''" 
+                                           @change="updateRepairDetails($event.target.value)"
+                                           style="width: 135px;">
+                                </div>
                             </div>
                         </div>
                     </div>

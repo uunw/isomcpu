@@ -9,7 +9,7 @@ from ..models.repair_request import RepairRequest
 from ..models.quotation import Quotation
 from ..schemas.repair_request import RepairRequestCreate
 from ..schemas.quotation import QuotationWithItemsResponse
-from ..services.repair_service import create_repair, get_repair_by_lineid
+from ..services.repair_service import create_repair, update_status as svc_update_status
 from ..services.line_service import push_message
 
 router = APIRouter()
@@ -75,21 +75,45 @@ def get_repair_quotation(repair_id: int, db: Session = Depends(get_db)):
 @router.put("/update-status-customer")
 def update_status_customer(queue_id: str, new_status: str, new_address: str = None, db: Session = Depends(get_db)):
     """
-    Simplified status update for customer actions (Confirm/Pay/Cancel).
+    Simplified status update for customer actions (Pay/Cancel/Complete).
     """
     repair = db.query(RepairRequest).filter(RepairRequest.queueId == queue_id).first()
     if not repair:
         raise HTTPException(status_code=404, detail="ไม่พบข้อมูล")
-    
-    # Validation: Only allow specific statuses for customer
-    allowed = ["WAITING_FOR_PAYMENT", "PAID", "CANCELLED"]
-    if new_status not in allowed:
-        raise HTTPException(status_code=400, detail="ไม่อนุญาตให้เปลี่ยนเป็นสถานะนี้")
 
-    repair.status = new_status
+    # Validation: Only allow specific statuses for customer
+    allowed = ["PAID", "CANCELLED", "COMPLETED"]
+    if new_status not in allowed:
+        raise HTTPException(status_code=400, detail="ไม่อนุญาตให้เปลี่ยนเป็นสถานะนี้โดยลูกค้า")
+
+    # Update address if provided (for CANCELLED case)
     if new_address:
         repair.address = new_address
+        db.commit()
+
+    # Use service to handle status transition and logging
+    try:
+        updated_repair = svc_update_status(queue_id, new_status, db)
         
-    db.commit()
-    db.refresh(repair)
-    return repair
+        # ส่งแจ้งเตือนกลับไปที่ LINE ลูกค้า
+        if updated_repair.lineUserId:
+            from ..services.line_service import push_update_notification, push_message
+            try:
+                push_update_notification(updated_repair.lineUserId, updated_repair.queueId, new_status)
+                
+                # ถ้ากดรับเครื่องสำเร็จ ให้ส่งข้อความขอบคุณพิเศษ
+                if new_status == "COMPLETED":
+                    thanks_msg = (
+                        "🙏 ขอบคุณที่ไว้วางใจใช้บริการ I SOM CPU ครับ!\n\n"
+                        "เครื่องของคุณได้รับการซ่อมแซมและส่งคืนเรียบร้อยแล้ว "
+                        "หากพบปัญหาการใช้งานเพิ่มเติม สามารถติดต่อสอบถามทางร้านได้ตลอดเวลาครับ"
+                    )
+                    push_message(updated_repair.lineUserId, thanks_msg)
+            except Exception:
+                pass
+
+        return updated_repair
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

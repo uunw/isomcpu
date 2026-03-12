@@ -8,6 +8,14 @@
                     <span class="search-icon">🔍</span>
                     <input type="text" placeholder="ค้นหาเลขงาน/ลูกค้า/อาการ" x-model="search" style="border-radius: 25px; padding: 10px 20px 10px 40px; border: 1px solid #ddd;">
                 </div>
+                <!-- Tech Filter -->
+                <select class="filter-select" x-model="filterTech" style="background: #f8f9fa; color: #333; border-radius: 25px; padding: 10px 20px; border: 1px solid #ddd; font-size: 0.9rem;">
+                    <option value="all">ช่างทุกคน ▾</option>
+                    <template x-for="t in allTechnicians" :key="t.id">
+                        <option :value="t.id" x-text="t.displayName"></option>
+                    </template>
+                </select>
+                <!-- Status Filter -->
                 <select class="filter-select" x-model="filterStatus" style="background: #001f3f; color: white; border-radius: 25px; padding: 10px 20px; border: none; font-size: 0.9rem;">
                     <option value="all">สถานะ ▾</option>
                     <template x-for="status in statusSequence" :key="status">

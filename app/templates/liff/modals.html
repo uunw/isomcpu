@@ -100,10 +100,12 @@
                 <h4 class="mb-0 fw-bold text-white">ชำระเงิน</h4>
             </div>
             <div class="modal-bottom p-4 text-center">
-                <template x-if="repairData.status === 'WAITING_FOR_PAYMENT'">
+                <!-- Show QR if status is QUOTED (Waiting for customer to pay) -->
+                <template x-if="repairData.status === 'QUOTED'">
                     <div>
                         <h5 class="mb-3">สแกนเพื่อชำระเงิน</h5>
-                        <img :src="'https://promptpay.io/06595353/' + (quotationData?.totalPrice || 0) + '.png'" class="img-fluid border p-2 mb-3" style="max-width: 200px;">
+                        <!-- Updated PromptPay Number: 0659535351 -->
+                        <img :src="'https://promptpay.io/0659535351/' + (quotationData?.totalPrice || 0) + '.png'" class="img-fluid border p-2 mb-3" style="max-width: 200px;">
                         <div class="fw-bold fs-4 text-primary mb-2" x-text="(quotationData?.totalPrice || 0).toLocaleString() + ' บาท'"></div>
                         <p class="small text-muted mb-4">กรุณาแนบหลักฐานการโอนเงิน (ถ้ามี)<br>หรือระบบจะตรวจสอบอัตโนมัติภายใน 5-10 นาที</p>
                         
@@ -114,6 +116,7 @@
                     </div>
                 </template>
 
+                <!-- Show Success if status is PAID or later -->
                 <template x-if="['PAID', 'REPAIRING', 'REPAIRED', 'DELIVERING', 'COMPLETED'].includes(repairData.status)">
                     <div class="py-4">
                         <div class="text-success mb-3" style="font-size: 4rem;">

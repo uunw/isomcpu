@@ -35,7 +35,14 @@ class TechnicianUpdate(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     phoneNumber: Optional[str] = None
-    password: Optional[str] = None
+
+
+class PasswordChange(BaseModel):
+    """
+    Schema for changing technician password.
+    """
+    oldPassword: str
+    newPassword: str
 
 
 class TechnicianResponse(TechnicianBase):

@@ -44,6 +44,13 @@
                                         <i class="fa-solid fa-file-invoice-dollar me-2"></i> คลิกเพื่อดูรายละเอียดใบเสนอราคา / ชำระเงิน
                                     </button>
                                 </template>
+
+                                <!-- Button for DELIVERING stage -->
+                                <template x-if="stage === 'DELIVERING'">
+                                    <button class="btn btn-success btn-sm mt-3 w-100" @click="confirmReceipt()" style="border-radius: 20px; background: #27ae60; border: none; font-weight: bold;">
+                                        <i class="fa-solid fa-circle-check me-2"></i> ฉันได้รับเครื่องซ่อมคืนเรียบร้อยแล้ว
+                                    </button>
+                                </template>
                             </div>
                         </template>
                     </div>

@@ -227,6 +227,37 @@
         </div>
     </template>
 
+    <!-- 5. Notification Modal (Notify Customer via LINE) -->
+    <template x-if="modalType === 'notification' && selectedRepair">
+        <div class="modal-container" x-show="modalOpen" x-transition.scale style="max-width: 500px;">
+            <div class="modal-header" style="background: #001f3f;">
+                <h2 style="color: white; width: 100%; text-align: center; margin: 0;">แจ้งปัญหาให้ลูกค้า</h2>
+                <button class="modal-close" @click="modalOpen = false">✕</button>
+            </div>
+            <div class="modal-content" style="padding: 2rem;" x-data="{ msg: '' }">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; color: #001f3f;">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <h4 style="margin: 0; font-weight: 800;">ส่งข้อความหาลูกค้า</h4>
+                </div>
+                <p style="color: #666; font-size: 0.85rem; margin-bottom: 1.5rem;">
+                    ข้อความนี้จะถูกส่งไปยัง LINE ของคุณ <strong x-text="selectedRepair.fullName"></strong> โดยตรงครับ
+                </p>
+                
+                <textarea x-model="msg" rows="4" placeholder="ระบุรายละเอียดปัญหา หรือข้อมูลที่ต้องการแจ้งลูกค้า..."
+                          style="width: 100%; padding: 15px; border-radius: 15px; border: 1.5px solid #e2e8f0; background: #f8fafc; font-size: 1rem; margin-bottom: 1.5rem; resize: none; font-family: inherit;"></textarea>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button @click="modalOpen = false" style="flex: 1; padding: 12px; border-radius: 15px; border: 1px solid #ddd; background: white; font-weight: bold; cursor: pointer;">ยกเลิก</button>
+                    <button @click="sendNotification(msg); modalOpen = false" 
+                            :disabled="!msg.trim()"
+                            style="flex: 2; padding: 12px; border-radius: 15px; background: #001f3f; color: white; border: none; font-weight: bold; cursor: pointer; opacity: msg.trim() ? 1 : 0.5;">
+                        ส่งข้อความ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
 </div>
 
 <style>

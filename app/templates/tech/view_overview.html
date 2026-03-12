@@ -1,82 +1,85 @@
-<div class="content-wrapper" style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; height: 100vh; overflow: hidden; padding: 20px;">
+<div class="content-wrapper" style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; height: 100%; overflow: hidden; padding: 20px;">
     <!-- Left: Stats Section -->
-    <section class="job-list-panel" style="width: 100%; height: 100%; padding: 2.5rem; border-radius: 40px; display: flex; flex-direction: column;">
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 2rem;">
+    <section class="job-list-panel" style="width: 100%; height: 100%; padding: 2rem 2.5rem; border-radius: 40px; display: flex; flex-direction: column; overflow-y: auto; background: transparent;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 2rem; flex-shrink: 0;">
             <div style="background: #f8f9fa; padding: 10px; border-radius: 15px; font-size: 1.5rem;">📊</div>
             <h2 style="font-size: 2.2rem; font-weight: 800; color: #001f3f; margin: 0;">ภาพรวมวันนี้</h2>
         </div>
 
         <!-- Shop Stats (Global) -->
-        <div class="stats-row" style="margin-bottom: 2.5rem;">
+        <div class="stats-row" style="margin-bottom: 2rem; flex-shrink: 0;">
             <div style="display: flex; gap: 15px;">
-                <!-- Total Card (Dark Blue) -->
-                <div style="flex: 1.2; background: #001f3f; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; box-shadow: 0 10px 20px rgba(0,31,63,0.2);">
-                    <div style="font-weight: bold; font-size: 1rem;">งานทั้งหมด</div>
-                    <div style="font-size: 4.5rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.global.total">0</div>
+                <div style="flex: 1.2; background: #001f3f; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; box-shadow: 0 10px 20px rgba(0,31,63,0.1);">
+                    <div style="font-weight: bold; font-size: 0.95rem;">งานทั้งหมด</div>
+                    <div style="font-size: 4rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.global.total">0</div>
                     <div></div>
                 </div>
-                <!-- Todo Card (Navy) -->
                 <div style="flex: 1; background: #2c3e50; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; opacity: 0.9;">งานที่ต้องทำ</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.todo">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.todo">0</div>
                     <div></div>
                 </div>
-                <!-- Waiting Card (Light Gray) -->
                 <div style="flex: 1; background: #e9ecef; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; color: #666;">รอการดำเนินการ</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.waiting">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.waiting">0</div>
                     <div></div>
                 </div>
-                <!-- Done Card (Silver) -->
                 <div style="flex: 1; background: #dee2e6; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; color: #666;">งานที่เสร็จแล้ว</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.done">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.global.done">0</div>
                     <div></div>
                 </div>
             </div>
         </div>
 
         <!-- My Stats (Personal) -->
-        <div class="stats-row">
+        <div class="stats-row" style="margin-bottom: 2rem; flex-shrink: 0;">
             <div style="display: flex; gap: 15px;">
-                <!-- My Total (Primary Blue) -->
-                <div style="flex: 1.2; background: #1a4da3; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 160px; box-shadow: 0 10px 20px rgba(26,77,163,0.2);">
-                    <div style="font-weight: bold; font-size: 1rem;">งานของฉัน</div>
-                    <div style="font-size: 4.5rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.personal.total">0</div>
+                <div style="flex: 1.2; background: #1a4da3; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between; min-height: 150px; box-shadow: 0 10px 20px rgba(26,77,163,0.1);">
+                    <div style="font-weight: bold; font-size: 0.95rem;">งานของฉัน</div>
+                    <div style="font-size: 4rem; font-weight: 900; line-height: 1; text-align: center;" x-text="dashboardSummary.personal.total">0</div>
                     <div></div>
                 </div>
-                <!-- My Todo (Steel Blue) -->
                 <div style="flex: 1; background: #4a6fa5; color: white; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; opacity: 0.9;">งานที่ต้องทำ</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.todo">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.todo">0</div>
                     <div></div>
                 </div>
-                <!-- My Waiting (Light Gray) -->
                 <div style="flex: 1; background: #e9ecef; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; color: #666;">รอการดำเนินการ</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.waiting">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.waiting">0</div>
                     <div></div>
                 </div>
-                <!-- My Done (Beige) -->
                 <div style="flex: 1; background: #e3e3e3; color: #333; padding: 1.5rem; border-radius: 25px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="font-size: 0.85rem; font-weight: bold; color: #666;">งานที่เสร็จแล้ว</div>
-                    <div style="font-size: 3.5rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.done">0</div>
+                    <div style="font-size: 3rem; font-weight: 800; text-align: center;" x-text="dashboardSummary.personal.done">0</div>
                     <div></div>
                 </div>
             </div>
         </div>
 
-        <div style="width: 100%; height: 2px; background: #eee; margin-top: 3rem;"></div>
+        <!-- Chart Section -->
+        <div style="background: white; border-radius: 35px; padding: 2.5rem; border: 1.5px solid #eef0f5; min-height: 400px; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.02);">
+            <h3 style="color: #001f3f; font-weight: 800; margin-bottom: 1.5rem; font-size: 1.3rem; display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-chart-line" style="color: #3b82f6;"></i> สถิติการซ่อมล่าสุด (Last 7 Days)
+            </h3>
+            <div style="flex: 1; width: 100%; min-height: 300px; position: relative;">
+                <canvas id="repairChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Add some bottom padding for scroll space -->
+        <div style="height: 50px; flex-shrink: 0;"></div>
     </section>
 
     <!-- Right: Notification Section -->
-    <aside style="background: white; border-radius: 40px; padding: 2rem; display: flex; flex-direction: column; height: 100%; border: 1.5px solid #eef0f5;">
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem;">
+    <aside style="background: white; border-radius: 40px; padding: 2rem; display: flex; flex-direction: column; height: 100%; border: 1.5px solid #eef0f5; overflow: hidden;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 1.5rem; flex-shrink: 0;">
             <div style="background: #fffbe6; padding: 8px; border-radius: 12px; font-size: 1.5rem;">🔔</div>
             <h2 style="font-size: 1.8rem; font-weight: 800; color: #001f3f; margin: 0;">การแจ้งเตือน</h2>
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 1rem; flex-shrink: 0;">
             <button style="background: #f8f9fa; border: 1px solid #ddd; padding: 4px 12px; border-radius: 15px; font-size: 0.75rem; color: #666; font-weight: bold;">อ่านแล้วทั้งหมด</button>
         </div>
 
@@ -113,11 +116,14 @@
 .activity-item:hover {
     background: #f8f9fa;
 }
-.activity-list::-webkit-scrollbar {
-    width: 4px;
+.activity-list::-webkit-scrollbar, .job-list-panel::-webkit-scrollbar {
+    width: 6px;
 }
-.activity-list::-webkit-scrollbar-thumb {
-    background: #eee;
+.activity-list::-webkit-scrollbar-thumb, .job-list-panel::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
     border-radius: 10px;
+}
+.activity-list::-webkit-scrollbar-track, .job-list-panel::-webkit-scrollbar-track {
+    background: transparent;
 }
 </style>

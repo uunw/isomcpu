@@ -10,7 +10,7 @@ from ..models.technician import Technician
 from ..models.repair_request import RepairRequest
 from ..models.quotation import Quotation
 from ..models.repair_media import RepairMedia
-from ..schemas.technician import TechnicianResponse, TechnicianCreate
+from ..schemas.technician import TechnicianResponse, TechnicianCreate, TechnicianUpdate, PasswordChange
 from ..schemas.quotation import QuotationCreate
 from ..utils.auth import verify_password, create_access_token, get_password_hash
 from ..services.line_service import push_update_notification
@@ -43,6 +43,52 @@ def me(db: Session = Depends(get_db), current_tech: Technician = Depends(get_cur
     Get current technician profile.
     """
     return current_tech
+
+
+@router.put("/me", response_model=TechnicianResponse)
+def update_profile(
+    obj_in: TechnicianUpdate,
+    db: Session = Depends(get_db),
+    current_tech: Technician = Depends(get_current_technician)
+):
+    """
+    Update current technician profile.
+    """
+    if obj_in.email:
+        existing = db.query(Technician).filter(Technician.email == obj_in.email, Technician.id != current_tech.id).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="อีเมลนี้ถูกใช้งานโดยช่างคนอื่นแล้ว")
+        current_tech.email = obj_in.email
+    
+    if obj_in.displayName:
+        current_tech.displayName = obj_in.displayName
+    if obj_in.firstName:
+        current_tech.firstName = obj_in.firstName
+    if obj_in.lastName:
+        current_tech.lastName = obj_in.lastName
+    if obj_in.phoneNumber:
+        current_tech.phoneNumber = obj_in.phoneNumber
+        
+    db.commit()
+    db.refresh(current_tech)
+    return current_tech
+
+
+@router.put("/change-password")
+def change_password(
+    obj_in: PasswordChange,
+    db: Session = Depends(get_db),
+    current_tech: Technician = Depends(get_current_technician)
+):
+    """
+    Change current technician password.
+    """
+    if not verify_password(obj_in.oldPassword, current_tech.password):
+        raise HTTPException(status_code=400, detail="รหัสผ่านเดิมไม่ถูกต้อง")
+    
+    current_tech.password = get_password_hash(obj_in.newPassword)
+    db.commit()
+    return {"message": "เปลี่ยนรหัสผ่านสำเร็จ"}
 
 
 @router.get("/info")
@@ -139,6 +185,50 @@ def assign_repair(
     db.commit()
     db.refresh(repair)
     return {"message": "มอบหมายงานสำเร็จ", "technician": repair.technician.displayName}
+
+
+@router.put("/repair/details")
+def update_repair_details(
+    queue_id: str,
+    pickup_date: str = None,
+    problem_detail: str = None,
+    db: Session = Depends(get_db),
+    current_tech: Technician = Depends(get_current_technician)
+):
+    """
+    Update specific repair details like pickup date or problem notes.
+    """
+    repair = db.query(RepairRequest).filter(RepairRequest.queueId == queue_id).first()
+    if not repair:
+        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลการซ่อม")
+    
+    if pickup_date:
+        repair.pickupDate = pickup_date
+    if problem_detail:
+        repair.problemDetail = problem_detail
+        
+    db.commit()
+    return {"message": "อัปเดตข้อมูลสำเร็จ"}
+
+
+@router.post("/repair/notify-customer")
+def notify_customer(
+    queue_id: str,
+    message: str,
+    db: Session = Depends(get_db),
+    current_tech: Technician = Depends(get_current_technician)
+):
+    """
+    Send a custom notification message to the customer via LINE.
+    """
+    repair = db.query(RepairRequest).filter(RepairRequest.queueId == queue_id).first()
+    if not repair or not repair.lineUserId:
+        raise HTTPException(status_code=404, detail="ไม่พบข้อมูลลูกค้าหรือ LINE ID")
+    
+    from ..services.line_service import push_message
+    full_msg = f"🔔 แจ้งเตือนจากร้าน (คิว {queue_id}):\n{message}"
+    push_message(repair.lineUserId, full_msg)
+    return {"message": "ส่งข้อความสำเร็จ"}
 
 
 @router.put("/repair/update")
